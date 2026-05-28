@@ -1,0 +1,122 @@
+const mqtt = require('mqtt');
+const Pedido = require('./models/pedido');
+const menu = require('./menu');
+
+let client = null;
+
+function connectMQTT() {
+  const brokerUrl = process.env.MQTT_BROKER || 'mqtt://mosquitto:1883';
+  const username = process.env.MQTT_USERNAME || 'mqtt_user';
+  const password = process.env.MQTT_PASSWORD || 'mqtt_password';
+
+  client = mqtt.connect(brokerUrl, {
+    username: username,
+    password: password,
+    reconnectPeriod: 5000
+  });
+
+  client.on('connect', () => {
+    console.log('✅ Conectado ao broker MQTT');
+    
+    // Inscrever nos tópicos
+    client.subscribe('sms/entrada');
+    client.subscribe('mb/confirmacao');
+  });
+
+  client.on('message', async (topic, message) => {
+    const data = JSON.parse(message.toString());
+    
+    switch (topic) {
+      case 'sms/entrada':
+        await handleIncomingSMS(data);
+        break;
+      case 'mb/confirmacao':
+        await handleActivationConfirmation(data);
+        break;
+    }
+  });
+
+  client.on('error', (error) => {
+    console.error('Erro MQTT:', error);
+  });
+}
+
+async function handleIncomingSMS(data) {
+  console.log('📩 SMS recebido:', data);
+  
+  const { remetente, mensagem, timestamp } = data;
+  
+  // Verificar se é confirmação M-Pesa
+  const mPesaMatch = mensagem.match(/Confirmacao: Recebeu ([\d.]+)MT de (\+\d+)/);
+  if (mPesaMatch) {
+    const valor = parseFloat(mPesaMatch[1]);
+    const telefone = mPesaMatch[2];
+    const refMatch = mensagem.match(/Ref: (\d+)/);
+    const referencia = refMatch ? refMatch[1] : null;
+    
+    await verificarPagamento(telefone, valor, referencia, 'm-pesa');
+    return;
+  }
+
+  // Verificar se é confirmação e-Mola
+  const eMolaMatch = mensagem.match(/Transferencia recebida: ([\d.]+) MZN de (\+\d+)/);
+  if (eMolaMatch) {
+    const valor = parseFloat(eMolaMatch[1]);
+    const telefone = eMolaMatch[2];
+    
+    await verificarPagamento(telefone, valor, null, 'e-mola');
+    return;
+  }
+}
+
+async function verificarPagamento(telefone, valor, referencia, metodo) {
+  // Converter formato de telefone (25884XXXXXXX -> 25884XXXXXXX@s.whatsapp.net)
+  const whatsappJid = telefone.includes('@') ? telefone : `${telefone}@s.whatsapp.net`;
+  
+  // Buscar pedido pendente para este cliente
+  const pedido = await Pedido.findOne({
+    'cliente.whatsapp': whatsappJid,
+    status: 'pendente',
+    metodoPagamento: metodo,
+    expiracao: { $gt: new Date() }
+  }).sort({ timestamp: -1 });
+
+  if (!pedido) {
+    console.log(`⚠️ Nenhum pedido pendente encontrado para ${telefone}`);
+    return;
+  }
+
+  // Verificar se o valor corresponde
+  if (Math.abs(valor - pedido.valorEsperado) < 0.01) {
+    console.log(`✅ Pagamento confirmado: ${telefone} - ${valor}MT`);
+    
+    pedido.valorPago = valor;
+    pedido.referencia = referencia;
+    pedido.status = 'pago';
+    await pedido.save();
+
+    // Notificar o bot para activar o pacote
+    await menu.confirmPayment(pedido);
+  } else {
+    console.log(`⚠️ Valor incorreto: esperado ${pedido.valorEsperado}MT, recebido ${valor}MT`);
+  }
+}
+
+async function handleActivationConfirmation(data) {
+  const { pedidoId, sucesso, mensagem } = data;
+  
+  await menu.notifyActivation(pedidoId, sucesso);
+}
+
+function publish(topic, message) {
+  if (client && client.connected) {
+    client.publish(topic, JSON.stringify(message));
+  } else {
+    console.error('Cliente MQTT não conectado');
+  }
+}
+
+module.exports = {
+  connectMQTT,
+  publish
+};

@@ -1,0 +1,91 @@
+services:
+  bot:
+    build: ./bot
+    container_name: mb-bot-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      MONGODB_URI: mongodb://mongo:27017/mb_bot
+      MQTT_BROKER: mosquitto
+      MQTT_PORT: 1883
+      MQTT_USERNAME: mqtt_user
+      MQTT_PASSWORD: mqtt_password
+    volumes:
+      - ./bot/src:/app/src
+      - auth-data-dev:/app/auth_info_baileys
+    depends_on:
+      - mongo
+      - mosquitto
+
+  worker:
+    build: ./worker
+    container_name: mb-worker-dev
+    restart: unless-stopped
+    environment:
+      MQTT_BROKER: mosquitto
+      MQTT_PORT: 1883
+      MQTT_USERNAME: mqtt_user
+      MQTT_PASSWORD: mqtt_password
+      ARDUINO_SERIAL_PORT: /dev/ttyUSB0
+      ARDUINO_BAUD_RATE: 9600
+    depends_on:
+      - mosquitto
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+
+  mqtt:
+    image: eclipse-mosquitto:2.0.14
+    container_name: mb-mosquitto-dev
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/acl:/mosquitto/config/acl
+      - ./mosquitto/passwords:/mosquitto/config/passwords
+      - mosquitto-data-dev:/mosquitto/data
+      - mosquitto-logs-dev:/mosquitto/logs
+
+  mongo:
+    image: mongo:7
+    container_name: mb-mongo-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data-dev:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: mb_bot
+
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: mb-mongo-express-dev
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/mb_bot
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    depends_on:
+      - mongo
+
+  frontend:
+    build: ./frontend
+    container_name: mb-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - bot
+    volumes:
+      - ./frontend/src:/usr/share/nginx/html
+
+volumes:
+  auth-data-dev:
+  mongo-data-dev:
+  mosquitto-data-dev:
+  mosquitto-logs-dev: {}
