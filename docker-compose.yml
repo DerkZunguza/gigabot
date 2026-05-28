@@ -37,7 +37,7 @@ services:
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0
 
-  mqtt:
+  mosquitto:
     image: eclipse-mosquitto:2.0.14
     container_name: mb-mosquitto
     restart: unless-stopped
