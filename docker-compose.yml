@@ -77,7 +77,7 @@ services:
       - mongo
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.mongo-express.rule=Host(`mongo.seudominio.duckdns.org`)"
+      - "traefik.http.routers.mongo-express.rule=Host(`mongo.acsqsrelatoriosapi.eurekaplatformapi.xyz`)"
       - "traefik.http.routers.mongo-express.entrypoints=websecure"
       - "traefik.http.routers.mongo-express.tls.certresolver=letsencrypt"
       - "traefik.http.services.mongo-express.loadbalancer.server.port=8081"
@@ -92,7 +92,7 @@ services:
       - bot
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.mb-bot.rule=Host(`seudominio.duckdns.org`)"
+      - "traefik.http.routers.mb-bot.rule=Host(`acsqsrelatoriosapi.eurekaplatformapi.xyz`)"
       - "traefik.http.routers.mb-bot.entrypoints=websecure"
       - "traefik.http.routers.mb-bot.tls.certresolver=letsencrypt"
       - "traefik.http.services.mb-bot.loadbalancer.server.port=80"
