@@ -1,0 +1,19 @@
+# Mosquitto ACL File
+
+# User mqtt_user can read/write all topics
+user mqtt_user
+topic readwrite #
+
+# User bot can read/write all topics
+user bot
+topic readwrite #
+
+# User worker can read/write all topics
+user worker
+topic readwrite #
+
+# User arduino can read/write specific topics
+user arduino
+topic readwrite sms/entrada
+topic readwrite mb/activar
+topic readwrite mb/confirmacao

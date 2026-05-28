@@ -1,0 +1,108 @@
+services:
+  bot:
+    build: ./bot
+    container_name: mb-bot
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://mongo:27017/mb_bot
+      MQTT_BROKER: mosquitto
+      MQTT_PORT: 1883
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    volumes:
+      - auth-data:/app/auth_info_baileys
+    depends_on:
+      - mongo
+      - mosquitto
+
+  worker:
+    build: ./worker
+    container_name: mb-worker
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    environment:
+      MQTT_BROKER: mosquitto
+      MQTT_PORT: 1883
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+      ARDUINO_SERIAL_PORT: /dev/ttyUSB0
+      ARDUINO_BAUD_RATE: 9600
+    depends_on:
+      - mosquitto
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+
+  mqtt:
+    image: eclipse-mosquitto:2.0.14
+    container_name: mb-mosquitto
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/acl:/mosquitto/config/acl
+      - ./mosquitto/passwords:/mosquitto/config/passwords
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-logs:/mosquitto/logs
+    ports:
+      - "1883:1883"
+
+  mongo:
+    image: mongo:7
+    container_name: mb-mongo
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: mb_bot
+
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: mb-mongo-express
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/mb_bot
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_PASSWORD}
+    depends_on:
+      - mongo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mongo-express.rule=Host(`mongo.seudominio.duckdns.org`)"
+      - "traefik.http.routers.mongo-express.entrypoints=websecure"
+      - "traefik.http.routers.mongo-express.tls.certresolver=letsencrypt"
+      - "traefik.http.services.mongo-express.loadbalancer.server.port=8081"
+
+  frontend:
+    build: ./frontend
+    container_name: mb-frontend
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    depends_on:
+      - bot
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mb-bot.rule=Host(`seudominio.duckdns.org`)"
+      - "traefik.http.routers.mb-bot.entrypoints=websecure"
+      - "traefik.http.routers.mb-bot.tls.certresolver=letsencrypt"
+      - "traefik.http.services.mb-bot.loadbalancer.server.port=80"
+
+volumes:
+  auth-data:
+  mongo-data:
+  mosquitto-data:
+  mosquitto-logs:
+
+networks:
+  traefik-public:
+    external: true
