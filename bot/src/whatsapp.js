@@ -26,11 +26,12 @@ async function startWhatsApp() {
     const { connection, lastDisconnect, qr } = update;
     
     if (qr) {
-      QRCode.toDtaURL(qr, (err, url) => {
+      QRCode.toDataURL(qr, (err, url) => {
         if (!err) {
           qrCode = url;
           connectionStatus = 'qr';
           if (qrCallback) qrCallback(url);
+          
         }
       });
     }
@@ -124,48 +125,4 @@ module.exports = {
   sendMessage,
   setQRCallback,
   restart
-};
-  if (!sock || connectionStatus !== 'connected') {
-    throw new Error('WhatsApp não conectado');
-  }
-  await sock.sendMessage(jid, { text });
-}
-
-async function sendMenu(jid, text) {
-  if (!sock || connectionStatus !== 'connected') {
-    throw new Error('WhatsApp não conectado');
-  }
-  await sock.sendMessage(jid, { text });
-}
-
-function getStatus() {
-  return {
-    status: connectionStatus,
-    qrCode: qrCode
-  };
-}
-
-function setQRCallback(callback) {
-  qrCallback = callback;
-}
-
-async function restart() {
-  const authPath = path.join(__dirname, 'auth_info_baileys');
-  if (fs.existsSync(authPath)) {
-    fs.rmSync(authPath, { recursive: true, force: true });
-  }
-  
-  connectionStatus = 'disconnected';
-  qrCode = null;
-  
-  await startWhatsApp();
-}
-
-module.exports = {
-  startWhatsApp,
-  sendMessage,
-  getStatus,
-  setQRCallback,
-  restart,
-  getConnectionStatus: () => connectionStatus
 };

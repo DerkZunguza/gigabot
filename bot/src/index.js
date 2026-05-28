@@ -13,10 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // Conectar ao MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://mongo:27017/mb_bot', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://mongo:27017/mb_bot').then(() => {
   console.log('✅ Conectado ao MongoDB');
 }).catch((error) => {
   console.error('❌ Erro ao conectar ao MongoDB:', error);
@@ -178,15 +175,13 @@ app.patch('/api/pedidos/:pedidoId', async (req, res) => {
 // ==================== INICIAR SERVIÇOS ====================
 
 async function start() {
-  // Iniciar WhatsApp
   await whatsapp.startWhatsApp();
-  
-  // Iniciar MQTT (se disponível)
-  if (mqtt && mqtt.connectMQTT) {
-    mqtt.connectMQTT();
-  }
-  
-  // Iniciar servidor Express
+  mqtt.connectMQTT();
+
+  // Limpar pedidos expirados a cada 5 minutos
+  const { limparPedidosExpirados } = require('./menu');
+  setInterval(limparPedidosExpirados, 5 * 60 * 1000);
+
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
