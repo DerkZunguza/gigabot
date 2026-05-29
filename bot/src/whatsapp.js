@@ -22,32 +22,30 @@ async function startWhatsApp() {
     browser: ['MB Venda Bot', 'Chrome', '1.0.0']
   });
 
-  sock.ev.on('connection.update', (update) => {
+  sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
-    
+
     if (qr) {
-      QRCode.toDataURL(qr, (err, url) => {
-        if (!err) {
-          qrCode = url;
-          connectionStatus = 'qr';
-          if (qrCallback) qrCallback(url);
-          
-        }
-      });
+      // Definir estado antes da conversao assincrona para evitar race condition
+      connectionStatus = 'qr';
+      qrCode = qr; // guardar o raw QR imediatamente
+      try {
+        const url = await QRCode.toDataURL(qr);
+        qrCode = url;
+        if (qrCallback) qrCallback(url);
+      } catch (_) {}
+      console.log('QR Code gerado — aguardando leitura');
     }
 
     if (connection === 'close') {
-      const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+      const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
       connectionStatus = 'disconnected';
       qrCode = null;
-      
-      if (shouldReconnect) {
-        startWhatsApp();
-      }
+      if (shouldReconnect) setTimeout(() => startWhatsApp(), 3000);
     } else if (connection === 'open') {
       connectionStatus = 'connected';
       qrCode = null;
-      console.log('✅ WhatsApp conectado!');
+      console.log('WhatsApp conectado');
     }
   });
 
