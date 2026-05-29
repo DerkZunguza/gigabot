@@ -43,10 +43,10 @@ services:
     restart: unless-stopped
     networks:
       - traefik-public
+    configs:
+      - source: mosquitto_conf
+        target: /mosquitto/config/mosquitto.conf
     volumes:
-      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
-      - ./mosquitto/acl:/mosquitto/config/acl
-      - ./mosquitto/passwords:/mosquitto/config/passwords
       - mosquitto-data:/mosquitto/data
       - mosquitto-logs:/mosquitto/logs
     ports:
@@ -99,6 +99,15 @@ volumes:
   mongo-data:
   mosquitto-data:
   mosquitto-logs:
+
+configs:
+  mosquitto_conf:
+    content: |
+      listener 1883
+      allow_anonymous true
+      persistence true
+      persistence_location /mosquitto/data/
+      log_dest stdout
 
 networks:
   traefik-public:
