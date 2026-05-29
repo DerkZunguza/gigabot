@@ -3,176 +3,270 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bot MB — Painel</title>
+  <title>GigaBot MZ — Painel de Controlo</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <nav class="navbar">
-    <div class="nav-brand">Bot MB Venda</div>
-    <div class="nav-right">
-      <span id="nav-wa"   class="badge badge-gray">WhatsApp: --</span>
-      <span id="nav-mqtt" class="badge badge-gray">MQTT: --</span>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">G</div>
+        <div>
+          <div class="brand-name">GigaBot MZ</div>
+          <div class="brand-sub">Painel de Controlo</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="nav-link active" data-section="dashboard" href="#">Visao Geral</a>
+        <a class="nav-link" data-section="whatsapp" href="#">WhatsApp</a>
+        <a class="nav-link" data-section="telegram" href="#">Telegram</a>
+        <a class="nav-link" data-section="hardware" href="#">Hardware</a>
+        <a class="nav-link" data-section="pedidos" href="#">Pedidos</a>
+      </nav>
+
+      <div class="sidebar-status">
+        <div class="sys-row">
+          <span class="sys-label">WhatsApp</span>
+          <span id="side-wa" class="dot dot-red"></span>
+        </div>
+        <div class="sys-row">
+          <span class="sys-label">MQTT</span>
+          <span id="side-mqtt" class="dot dot-red"></span>
+        </div>
+        <div class="sys-row">
+          <span class="sys-label">Telegram Admin</span>
+          <span id="side-tg" class="dot dot-red"></span>
+        </div>
+        <div class="sys-row">
+          <span class="sys-label">Telegram Vendas</span>
+          <span id="side-tgs" class="dot dot-red"></span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="content">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <button class="menu-toggle" id="menu-toggle">&#9776;</button>
+        <div class="topbar-title" id="page-title">Visao Geral</div>
+        <div class="topbar-right">
+          <span id="top-status" class="status-pill disconnected">Desconectado</span>
+        </div>
+      </header>
+
+      <!-- SECTIONS -->
+
+      <!-- DASHBOARD -->
+      <section class="section active" id="sec-dashboard">
+        <div class="stats-row">
+          <div class="kpi">
+            <div class="kpi-value" id="stat-hoje">--</div>
+            <div class="kpi-label">Vendas Hoje</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-value" id="stat-total">--</div>
+            <div class="kpi-label">Total Pedidos</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-value" id="stat-pendentes">--</div>
+            <div class="kpi-label">Pendentes</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-value" id="stat-clientes">--</div>
+            <div class="kpi-label">Clientes</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Pedidos Recentes</h2>
+            <button id="refresh-btn" class="btn btn-ghost btn-sm">Actualizar</button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Numero</th><th>Pacote</th><th>Valor</th>
+                  <th>Metodo</th><th>Estado</th><th>Data</th>
+                </tr>
+              </thead>
+              <tbody id="pedidos-body">
+                <tr><td colspan="6" class="empty">A carregar...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- WHATSAPP -->
+      <section class="section" id="sec-whatsapp">
+        <div class="card">
+          <div class="card-head">
+            <h2>Conexao WhatsApp</h2>
+          </div>
+
+          <div id="wa-status-bar" class="status-banner disconnected">
+            <span class="pulse"></span>
+            <span id="wa-status-text">A verificar...</span>
+          </div>
+
+          <div id="wa-qr" class="qr-wrap hidden">
+            <div class="qr-instructions">
+              Abra o WhatsApp &rarr; Aparelhos conectados &rarr; Conectar um aparelho &rarr; Aponte a camara para o codigo abaixo
+            </div>
+            <div class="qr-frame">
+              <img id="qr-image" src="" alt="QR Code">
+            </div>
+          </div>
+
+          <div id="wa-pairing" class="pairing-wrap hidden">
+            <div class="qr-instructions">
+              Abra o WhatsApp &rarr; Aparelhos conectados &rarr; Ligar com numero de telefone &rarr; Introduza o codigo abaixo
+            </div>
+            <div class="pairing-code" id="pairing-code">--------</div>
+          </div>
+
+          <div id="wa-connected" class="alert alert-green hidden">
+            WhatsApp esta conectado. O bot esta a processar mensagens.
+          </div>
+
+          <div class="connect-panel">
+            <div class="panel-label">Ligar com numero de telefone (recomendado)</div>
+            <div class="input-row">
+              <input id="phone-input" type="text" placeholder="Ex: 258841234567">
+              <button id="pair-btn" class="btn btn-primary">Obter Codigo</button>
+            </div>
+            <div class="panel-divider">ou</div>
+            <button id="qr-btn" class="btn btn-outline">Gerar QR Code</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TELEGRAM -->
+      <section class="section" id="sec-telegram">
+        <div class="tg-grid">
+          <div class="card">
+            <div class="card-head"><h2>Bot Administrador</h2></div>
+            <div class="tg-bot-info">
+              <div class="tg-username">@Gigabotmz_bot</div>
+              <div id="tg-admin-status" class="badge badge-red">Desligado</div>
+            </div>
+            <p class="muted-text">Controla o sistema remotamente. So tu tens acesso.</p>
+            <div class="cmd-list">
+              <div class="cmd-row"><code>/status</code><span>Estado de todos os sistemas</span></div>
+              <div class="cmd-row"><code>/qr</code><span>Receber QR Code ou codigo de pareamento</span></div>
+              <div class="cmd-row"><code>/restart</code><span>Reiniciar conexao WhatsApp</span></div>
+              <div class="cmd-row"><code>/pedidos</code><span>Resumo das vendas do dia</span></div>
+              <div class="cmd-row"><code>/chatid</code><span>Ver o teu Chat ID</span></div>
+              <div class="cmd-row"><code>/ajuda</code><span>Lista de todos os comandos</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Bot de Vendas</h2></div>
+            <div class="tg-bot-info">
+              <div class="tg-username">Criar em @BotFather</div>
+              <div id="tg-sales-status" class="badge badge-red">Desligado</div>
+            </div>
+            <p class="muted-text">Bot publico para os clientes comprarem pacotes MB directamente no Telegram.</p>
+            <div class="cmd-list">
+              <div class="cmd-row"><code>/start</code><span>Boas-vindas e termos de utilizacao</span></div>
+              <div class="cmd-row"><code>/menu</code><span>Menu principal de compra</span></div>
+              <div class="cmd-row"><code>/pedidos</code><span>Ver os seus pedidos anteriores</span></div>
+              <div class="cmd-row"><code>/cancelar</code><span>Cancelar pedido em curso</span></div>
+            </div>
+            <div class="alert alert-blue" style="margin-top:16px">
+              Adiciona TELEGRAM_SALES_TOKEN nas variaveis de ambiente do Portainer com o token de um segundo bot criado no BotFather.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HARDWARE -->
+      <section class="section" id="sec-hardware">
+        <div class="card">
+          <div class="card-head">
+            <h2>Estado dos Sistemas</h2>
+            <button id="hw-refresh" class="btn btn-ghost btn-sm">Actualizar</button>
+          </div>
+          <div class="hw-list">
+            <div class="hw-row">
+              <div class="hw-info">
+                <div class="hw-name">Broker MQTT (Mosquitto)</div>
+                <div class="hw-desc">Comunicacao entre o bot e o Arduino</div>
+              </div>
+              <div id="hw-mqtt" class="hw-badge">--</div>
+            </div>
+            <div class="hw-row">
+              <div class="hw-info">
+                <div class="hw-name">Arduino + SIM900</div>
+                <div class="hw-desc">Dispositivo fisico para SMS e USSD</div>
+              </div>
+              <div id="hw-arduino" class="hw-badge">--</div>
+            </div>
+            <div class="hw-row">
+              <div class="hw-info">
+                <div class="hw-name">WhatsApp (Baileys)</div>
+                <div class="hw-desc">Conexao ao WhatsApp Web</div>
+              </div>
+              <div id="hw-whatsapp" class="hw-badge">--</div>
+            </div>
+            <div class="hw-row">
+              <div class="hw-info">
+                <div class="hw-name">MongoDB</div>
+                <div class="hw-desc">Base de dados de clientes e pedidos</div>
+              </div>
+              <div class="hw-badge ok">Ligado</div>
+            </div>
+            <div class="hw-row">
+              <div class="hw-info">
+                <div class="hw-name">Telegram Bot Admin</div>
+                <div class="hw-desc">Bot de administracao remota</div>
+              </div>
+              <div id="hw-telegram" class="hw-badge">--</div>
+            </div>
+            <div class="hw-row">
+              <div class="hw-info">
+                <div class="hw-name">Telegram Bot Vendas</div>
+                <div class="hw-desc">Bot publico de vendas para clientes</div>
+              </div>
+              <div id="hw-telegram-sales" class="hw-badge">--</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PEDIDOS -->
+      <section class="section" id="sec-pedidos">
+        <div class="card">
+          <div class="card-head">
+            <h2>Todos os Pedidos</h2>
+            <button id="pedidos-refresh" class="btn btn-ghost btn-sm">Actualizar</button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Numero / Canal</th><th>Pacote</th><th>Valor</th>
+                  <th>Metodo</th><th>Estado</th><th>Data</th>
+                </tr>
+              </thead>
+              <tbody id="all-pedidos-body">
+                <tr><td colspan="6" class="empty">A carregar...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </div>
-  </nav>
-
-  <main class="main">
-
-    <!-- WHATSAPP -->
-    <section class="card">
-      <div class="card-header">
-        <h2>Conexao WhatsApp</h2>
-      </div>
-
-      <div id="status-bar" class="status-bar disconnected">
-        <span class="status-dot"></span>
-        <span id="status-text">A verificar...</span>
-      </div>
-
-      <!-- QR Code -->
-      <div id="qr-section" class="qr-section hidden">
-        <p class="info-box">Abra o WhatsApp &rarr; Aparelhos conectados &rarr; Conectar um aparelho &rarr; Aponte a camara para o codigo abaixo</p>
-        <div class="qr-box">
-          <img id="qr-image" src="" alt="QR Code">
-        </div>
-      </div>
-
-      <!-- Pairing Code -->
-      <div id="pairing-section" class="pairing-section hidden">
-        <p class="info-box">Abra o WhatsApp &rarr; Aparelhos conectados &rarr; Ligar com numero de telefone &rarr; Introduza o codigo abaixo</p>
-        <div class="pairing-code" id="pairing-code">----</div>
-      </div>
-
-      <!-- Conectado -->
-      <div id="connected-info" class="info-box info-green hidden">
-        WhatsApp conectado. O bot esta a receber mensagens.
-      </div>
-
-      <!-- Acoes -->
-      <div class="connect-actions">
-        <div class="input-group">
-          <input type="text" id="phone-input" placeholder="Numero com codigo do pais: 258841234567">
-          <button id="pair-btn" class="btn btn-primary">Ligar com numero</button>
-        </div>
-        <button id="qr-btn" class="btn btn-secondary">Gerar QR Code</button>
-      </div>
-    </section>
-
-    <!-- HARDWARE -->
-    <section class="card">
-      <div class="card-header">
-        <h2>Estado dos Sistemas</h2>
-        <button id="hw-refresh" class="btn btn-secondary btn-sm">Actualizar</button>
-      </div>
-      <div class="hw-grid">
-        <div class="hw-item">
-          <div class="hw-label">Broker MQTT</div>
-          <div id="hw-mqtt" class="hw-status">--</div>
-        </div>
-        <div class="hw-item">
-          <div class="hw-label">Arduino / SIM900</div>
-          <div id="hw-arduino" class="hw-status">--</div>
-        </div>
-        <div class="hw-item">
-          <div class="hw-label">WhatsApp</div>
-          <div id="hw-whatsapp" class="hw-status">--</div>
-        </div>
-        <div class="hw-item">
-          <div class="hw-label">MongoDB</div>
-          <div id="hw-mongo" class="hw-status ok">Ligado</div>
-        </div>
-        <div class="hw-item">
-          <div class="hw-label">Telegram Bot</div>
-          <div id="hw-telegram" class="hw-status">--</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TELEGRAM -->
-    <section class="card">
-      <div class="card-header">
-        <h2>Telegram — @Gigabotmz_bot</h2>
-      </div>
-      <p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">
-        Controla o bot remotamente pelo Telegram. Envia os comandos abaixo para <strong>@Gigabotmz_bot</strong>.
-      </p>
-      <div class="cmd-grid">
-        <div class="cmd-item">
-          <div class="cmd-name">/status</div>
-          <div class="cmd-desc">Estado de todos os sistemas (WhatsApp, MQTT, Arduino)</div>
-        </div>
-        <div class="cmd-item">
-          <div class="cmd-name">/qr</div>
-          <div class="cmd-desc">Recebe o QR Code ou codigo de pareamento directamente no Telegram</div>
-        </div>
-        <div class="cmd-item">
-          <div class="cmd-name">/restart</div>
-          <div class="cmd-desc">Reinicia a conexao WhatsApp e gera novo QR</div>
-        </div>
-        <div class="cmd-item">
-          <div class="cmd-name">/pedidos</div>
-          <div class="cmd-desc">Resumo das vendas do dia (total, activados, pendentes, receita)</div>
-        </div>
-        <div class="cmd-item">
-          <div class="cmd-name">/chatid</div>
-          <div class="cmd-desc">Mostra o teu Chat ID para configurar o TELEGRAM_CHAT_ID</div>
-        </div>
-        <div class="cmd-item">
-          <div class="cmd-name">/ajuda</div>
-          <div class="cmd-desc">Lista todos os comandos disponiveis</div>
-        </div>
-      </div>
-      <div class="info-box" style="margin-top:16px">
-        O bot envia o QR Code automaticamente quando o WhatsApp precisa de ser reconectado. Nao precisas de abrir o dashboard.
-      </div>
-    </section>
-
-    <!-- STATS -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-value" id="stat-hoje">--</div>
-        <div class="stat-label">Vendas hoje</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="stat-total">--</div>
-        <div class="stat-label">Total pedidos</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="stat-pendentes">--</div>
-        <div class="stat-label">Pendentes</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="stat-clientes">--</div>
-        <div class="stat-label">Clientes</div>
-      </div>
-    </div>
-
-    <!-- PEDIDOS -->
-    <section class="card">
-      <div class="card-header">
-        <h2>Pedidos Recentes</h2>
-        <button id="refresh-btn" class="btn btn-secondary btn-sm">Actualizar</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Numero</th>
-              <th>Pacote</th>
-              <th>Valor</th>
-              <th>Metodo</th>
-              <th>Estado</th>
-              <th>Data</th>
-            </tr>
-          </thead>
-          <tbody id="pedidos-body">
-            <tr><td colspan="6" class="empty">A carregar...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-  </main>
+  </div>
 
   <script src="script.js"></script>
 </body>

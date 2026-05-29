@@ -17,6 +17,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      TELEGRAM_SALES_TOKEN: ${TELEGRAM_SALES_TOKEN}
     volumes:
       - auth-data:/app/auth_info_baileys
     depends_on:

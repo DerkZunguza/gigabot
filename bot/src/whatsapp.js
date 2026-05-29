@@ -135,8 +135,11 @@ async function restart(phoneNumber = null) {
     try { await sock.logout(); } catch (_) {}
     sock = null;
   }
+  // Apagar apenas o CONTEUDO do directorio (nao o directorio em si — e um volume Docker montado)
   if (fs.existsSync(AUTH_PATH)) {
-    fs.rmSync(AUTH_PATH, { recursive: true, force: true });
+    for (const f of fs.readdirSync(AUTH_PATH)) {
+      fs.rmSync(path.join(AUTH_PATH, f), { recursive: true, force: true });
+    }
   }
   connectionStatus = 'disconnected';
   qrCode = null;

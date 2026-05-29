@@ -5,7 +5,8 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const whatsapp = require('./whatsapp');
 const mqtt     = require('./mqtt');
-const telegram = require('./telegram');
+const telegram      = require('./telegram');
+const telegramSales = require('./telegram-sales');
 const Cliente = require('./models/cliente');
 const Pedido = require('./models/pedido');
 const Pacote = require('./models/pacote');
@@ -219,7 +220,8 @@ app.get('/api/hardware', (req, res) => {
     whatsapp: whatsapp.getStatus().status,
     mqtt:     mqtt.isConnected()      ? 'connected' : 'disconnected',
     arduino:  fs.existsSync('/dev/ttyUSB0') ? 'connected' : 'disconnected',
-    telegram: telegram.isActive()     ? 'connected' : 'disconnected'
+    telegram:      telegram.isActive()      ? 'connected' : 'disconnected',
+    telegramSales: telegramSales.isActive() ? 'connected' : 'disconnected'
   });
 });
 
@@ -255,6 +257,7 @@ async function start() {
   await whatsapp.startWhatsApp();
   mqtt.connectMQTT();
   telegram.init();
+  telegramSales.initSales();
 
   // Limpar pedidos expirados a cada 5 minutos
   const { limparPedidosExpirados } = require('./menu');

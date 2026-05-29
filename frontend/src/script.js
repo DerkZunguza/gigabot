@@ -7,27 +7,58 @@ async function api(path, options = {}) {
       headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
     });
     return res.json().catch(() => null);
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
+
+// ── NAVEGACAO ─────────────────────────────────────────
+
+const sections  = document.querySelectorAll('.section');
+const navLinks  = document.querySelectorAll('.nav-link');
+const pageTitle = document.getElementById('page-title');
+
+const TITLES = {
+  dashboard: 'Visao Geral',
+  whatsapp:  'WhatsApp',
+  telegram:  'Telegram',
+  hardware:  'Hardware',
+  pedidos:   'Pedidos',
+};
+
+navLinks.forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const sec = link.dataset.section;
+    navLinks.forEach(l => l.classList.remove('active'));
+    sections.forEach(s => s.classList.remove('active'));
+    link.classList.add('active');
+    document.getElementById(`sec-${sec}`).classList.add('active');
+    pageTitle.textContent = TITLES[sec] || sec;
+    document.querySelector('.sidebar').classList.remove('open');
+    if (sec === 'pedidos') loadAllPedidos();
+  });
+});
+
+document.getElementById('menu-toggle').addEventListener('click', () => {
+  document.querySelector('.sidebar').classList.toggle('open');
+});
 
 // ── WHATSAPP STATUS ───────────────────────────────────
 
-const statusBar      = document.getElementById('status-bar');
-const statusTxt      = document.getElementById('status-text');
-const qrSection      = document.getElementById('qr-section');
-const qrImage        = document.getElementById('qr-image');
-const pairingSection = document.getElementById('pairing-section');
-const pairingCode    = document.getElementById('pairing-code');
-const connInfo       = document.getElementById('connected-info');
-const navWa          = document.getElementById('nav-wa');
+const waBar     = document.getElementById('wa-status-bar');
+const waTxt     = document.getElementById('wa-status-text');
+const waQr      = document.getElementById('wa-qr');
+const qrImg     = document.getElementById('qr-image');
+const waPairing = document.getElementById('wa-pairing');
+const pairTxt   = document.getElementById('pairing-code');
+const waConn    = document.getElementById('wa-connected');
+const topPill   = document.getElementById('top-status');
+const sideWa    = document.getElementById('side-wa');
 
 const WA_LABELS = {
-  connected: 'Conectado',
+  connected:    'Conectado',
   disconnected: 'Desconectado',
-  qr: 'Aguardando leitura do QR Code',
-  pairing: 'Aguardando codigo de pareamento',
+  qr:           'Aguardando leitura do QR Code',
+  pairing:      'Aguardando codigo de pareamento',
 };
 
 async function checkStatus() {
@@ -35,69 +66,41 @@ async function checkStatus() {
   if (!data) return;
 
   const s = data.status;
-  statusBar.className   = `status-bar ${s === 'pairing' ? 'qr' : s}`;
-  statusTxt.textContent = WA_LABELS[s] || s;
-  navWa.textContent     = 'WhatsApp: ' + (WA_LABELS[s] || s);
-  navWa.className       = 'badge ' + (s === 'connected' ? 'badge-green' : s === 'disconnected' ? 'badge-red' : 'badge-yellow');
+  const label = WA_LABELS[s] || s;
 
-  // QR Code
-  if (s === 'qr' && data.qrCode) {
-    qrImage.src = data.qrCode;
-    qrSection.classList.remove('hidden');
-  } else {
-    qrSection.classList.add('hidden');
-  }
+  waBar.className = `status-banner ${s === 'pairing' ? 'qr' : s}`;
+  waTxt.textContent  = label;
+  topPill.textContent = label;
+  topPill.className   = `status-pill ${s}`;
 
-  // Pairing Code
-  if (s === 'pairing' && data.pairingCode) {
-    pairingCode.textContent = data.pairingCode;
-    pairingSection.classList.remove('hidden');
-  } else {
-    pairingSection.classList.add('hidden');
-  }
+  sideWa.className = 'dot ' + (s === 'connected' ? 'dot-green' : s === 'disconnected' ? 'dot-red' : 'dot-yellow');
 
-  // Conectado
-  if (s === 'connected') {
-    connInfo.classList.remove('hidden');
-  } else {
-    connInfo.classList.add('hidden');
-  }
+  waQr.classList.toggle('hidden',     !(s === 'qr' && data.qrCode));
+  waPairing.classList.toggle('hidden', !(s === 'pairing' && data.pairingCode));
+  waConn.classList.toggle('hidden',     s !== 'connected');
+
+  if (s === 'qr' && data.qrCode) qrImg.src = data.qrCode;
+  if (s === 'pairing' && data.pairingCode) pairTxt.textContent = data.pairingCode;
 }
 
-// Ligar com numero de telefone (pairing code)
+// Ligar com numero
 document.getElementById('pair-btn').addEventListener('click', async () => {
   const phone = document.getElementById('phone-input').value.trim();
-  if (!phone) {
-    alert('Introduz o numero com codigo do pais. Exemplo: 258841234567');
-    return;
-  }
+  if (!phone) { alert('Introduz o numero com codigo do pais. Ex: 258841234567'); return; }
   const btn = document.getElementById('pair-btn');
   btn.disabled = true;
-  btn.textContent = 'A gerar codigo...';
-  statusTxt.textContent = 'A gerar codigo de pareamento...';
-
-  const data = await api('/pair', {
-    method: 'POST',
-    body: JSON.stringify({ phone })
-  });
-
+  btn.textContent = 'A gerar...';
+  await api('/pair', { method: 'POST', body: JSON.stringify({ phone }) });
   btn.disabled = false;
-  btn.textContent = 'Ligar com numero';
-
-  if (!data || !data.success) {
-    alert('Erro: ' + (data?.error || 'falha desconhecida'));
-  }
+  btn.textContent = 'Obter Codigo';
 });
 
-// Gerar QR Code
+// Gerar QR
 document.getElementById('qr-btn').addEventListener('click', async () => {
   const btn = document.getElementById('qr-btn');
   btn.disabled = true;
   btn.textContent = 'A reiniciar...';
-  statusTxt.textContent = 'A gerar QR Code...';
-
   await api('/restart', { method: 'POST' });
-
   setTimeout(() => {
     btn.disabled = false;
     btn.textContent = 'Gerar QR Code';
@@ -105,11 +108,13 @@ document.getElementById('qr-btn').addEventListener('click', async () => {
   }, 5000);
 });
 
-// ── HARDWARE STATUS ───────────────────────────────────
+// ── HARDWARE ─────────────────────────────────────────
 
-const navMqtt = document.getElementById('nav-mqtt');
+const sideMqtt = document.getElementById('side-mqtt');
+const sideTg   = document.getElementById('side-tg');
+const sideTgs  = document.getElementById('side-tgs');
 
-function setHwStatus(id, value) {
+function setHw(id, value) {
   const el = document.getElementById(id);
   if (!el) return;
   const map = {
@@ -118,20 +123,35 @@ function setHwStatus(id, value) {
     qr:           ['warn', 'Aguardando QR'],
     pairing:      ['warn', 'A parear'],
   };
-  const [cls, label] = map[value] || ['warn', value];
-  el.className  = `hw-status ${cls}`;
-  el.textContent = label;
+  const [cls, lbl] = map[value] || ['', value];
+  el.className  = `hw-badge ${cls}`;
+  el.textContent = lbl;
 }
 
 async function checkHardware() {
   const data = await api('/hardware');
   if (!data) return;
-  setHwStatus('hw-mqtt',     data.mqtt);
-  setHwStatus('hw-arduino',  data.arduino);
-  setHwStatus('hw-whatsapp', data.whatsapp);
-  setHwStatus('hw-telegram', data.telegram);
-  navMqtt.textContent = 'MQTT: ' + (data.mqtt === 'connected' ? 'Ligado' : 'Desligado');
-  navMqtt.className   = 'badge ' + (data.mqtt === 'connected' ? 'badge-green' : 'badge-red');
+
+  setHw('hw-mqtt',          data.mqtt);
+  setHw('hw-arduino',       data.arduino);
+  setHw('hw-whatsapp',      data.whatsapp);
+  setHw('hw-telegram',      data.telegram);
+  setHw('hw-telegram-sales',data.telegramSales);
+
+  sideMqtt.className = 'dot ' + (data.mqtt      === 'connected' ? 'dot-green' : 'dot-red');
+  sideTg.className   = 'dot ' + (data.telegram  === 'connected' ? 'dot-green' : 'dot-red');
+  sideTgs.className  = 'dot ' + (data.telegramSales === 'connected' ? 'dot-green' : 'dot-red');
+
+  const tgAdminBadge = document.getElementById('tg-admin-status');
+  const tgSalesBadge = document.getElementById('tg-sales-status');
+  if (tgAdminBadge) {
+    tgAdminBadge.textContent = data.telegram === 'connected' ? 'Activo' : 'Inactivo';
+    tgAdminBadge.className   = 'badge ' + (data.telegram === 'connected' ? 'badge-green' : 'badge-red');
+  }
+  if (tgSalesBadge) {
+    tgSalesBadge.textContent = data.telegramSales === 'connected' ? 'Activo' : 'Inactivo';
+    tgSalesBadge.className   = 'badge ' + (data.telegramSales === 'connected' ? 'badge-green' : 'badge-red');
+  }
 }
 
 document.getElementById('hw-refresh').addEventListener('click', checkHardware);
@@ -147,30 +167,42 @@ async function loadStats() {
   document.getElementById('stat-clientes').textContent  = data.clientes  ?? '--';
 }
 
-// ── PEDIDOS ───────────────────────────────────────────
+// ── PEDIDOS (dashboard) ───────────────────────────────
+
+function canal(whatsapp) {
+  if (!whatsapp) return '--';
+  if (whatsapp.startsWith('tg_')) return 'Telegram ' + whatsapp.replace('tg_', '');
+  return whatsapp.replace('@s.whatsapp.net', '');
+}
+
+function rowPedido(p) {
+  const valor  = p.valorEsperado ? p.valorEsperado + ' MT' : '--';
+  const metodo = p.metodoPagamento === 'm-pesa' ? 'M-Pesa' : p.metodoPagamento === 'e-mola' ? 'e-Mola' : '--';
+  const dt     = p.createdAt ? new Date(p.createdAt).toLocaleString('pt') : '--';
+  return `<tr>
+    <td>${canal(p.cliente?.whatsapp)}</td>
+    <td>${p.pacote?.mbFormatado || p.pacote?.nome || '--'}</td>
+    <td>${valor}</td>
+    <td>${metodo}</td>
+    <td>${badgeStatus(p.status)}</td>
+    <td>${dt}</td>
+  </tr>`;
+}
 
 async function loadPedidos() {
   const tbody = document.getElementById('pedidos-body');
   const data  = await api('/pedidos/recentes');
-  if (!data || !data.data || data.data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">Sem pedidos</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.data.map(p => {
-    const num    = (p.cliente?.whatsapp || '').replace('@s.whatsapp.net', '') || '--';
-    const pacote = p.pacote?.mbFormatado || p.pacote?.nome || '--';
-    const valor  = p.valorEsperado ? p.valorEsperado + ' MT' : '--';
-    const metodo = p.metodoPagamento === 'm-pesa' ? 'M-Pesa' : p.metodoPagamento === 'e-mola' ? 'e-Mola' : '--';
-    const dt     = p.createdAt ? new Date(p.createdAt).toLocaleString('pt') : '--';
-    return `<tr>
-      <td>${num}</td>
-      <td>${pacote}</td>
-      <td>${valor}</td>
-      <td>${metodo}</td>
-      <td>${badgeStatus(p.status)}</td>
-      <td>${dt}</td>
-    </tr>`;
-  }).join('');
+  tbody.innerHTML = (!data?.data?.length)
+    ? '<tr><td colspan="6" class="empty">Sem pedidos</td></tr>'
+    : data.data.slice(0, 10).map(rowPedido).join('');
+}
+
+async function loadAllPedidos() {
+  const tbody = document.getElementById('all-pedidos-body');
+  const data  = await api('/pedidos/recentes');
+  tbody.innerHTML = (!data?.data?.length)
+    ? '<tr><td colspan="6" class="empty">Sem pedidos</td></tr>'
+    : data.data.map(rowPedido).join('');
 }
 
 function badgeStatus(s) {
@@ -182,14 +214,14 @@ function badgeStatus(s) {
     expirado:  ['badge-gray',   'Expirado'],
     cancelado: ['badge-gray',   'Cancelado'],
   };
-  const [cls, label] = map[s] || ['badge-gray', s];
-  return `<span class="badge ${cls}">${label}</span>`;
+  const [cls, lbl] = map[s] || ['badge-gray', s];
+  return `<span class="badge ${cls}">${lbl}</span>`;
 }
 
 document.getElementById('refresh-btn').addEventListener('click', () => {
-  loadPedidos();
-  loadStats();
+  loadPedidos(); loadStats();
 });
+document.getElementById('pedidos-refresh').addEventListener('click', loadAllPedidos);
 
 // ── INIT ──────────────────────────────────────────────
 
@@ -200,3 +232,4 @@ loadPedidos();
 
 setInterval(checkStatus,   4000);
 setInterval(checkHardware, 10000);
+setInterval(loadStats,     30000);
