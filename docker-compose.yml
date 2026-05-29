@@ -41,9 +41,10 @@ services:
     restart: unless-stopped
     networks:
       - traefik-public
-    configs:
-      - source: mosquitto_conf
-        target: /mosquitto/config/mosquitto.conf
+    entrypoint: >
+      sh -c "mkdir -p /mosquitto/config &&
+      printf 'listener 1883\nallow_anonymous true\npersistence true\npersistence_location /mosquitto/data/\nlog_dest stdout\n' > /mosquitto/config/mosquitto.conf &&
+      mosquitto -c /mosquitto/config/mosquitto.conf"
     volumes:
       - mosquitto-data:/mosquitto/data
       - mosquitto-logs:/mosquitto/logs
@@ -97,15 +98,6 @@ volumes:
   mongo-data:
   mosquitto-data:
   mosquitto-logs:
-
-configs:
-  mosquitto_conf:
-    content: |
-      listener 1883
-      allow_anonymous true
-      persistence true
-      persistence_location /mosquitto/data/
-      log_dest stdout
 
 networks:
   traefik-public:
