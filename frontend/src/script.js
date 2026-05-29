@@ -16,12 +16,99 @@ const sections  = document.querySelectorAll('.section');
 const navLinks  = document.querySelectorAll('.nav-link');
 const pageTitle = document.getElementById('page-title');
 
+// ── SMS ───────────────────────────────────────────────
+
+async function loadSMS() {
+  const filtro = document.getElementById('sms-filter').value;
+  const url    = filtro ? `/sms?tipo=${filtro}` : '/sms';
+  const data   = await api(url);
+  const tbody  = document.getElementById('sms-body');
+
+  if (!data?.data?.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Sem SMS</td></tr>';
+    return;
+  }
+
+  const tipos = { mpesa: 'badge-green', emola: 'badge-blue', outro: 'badge-gray' };
+  tbody.innerHTML = data.data.map(s => {
+    const dt  = new Date(s.timestamp).toLocaleString('pt');
+    const cls = tipos[s.tipo] || 'badge-gray';
+    return `<tr>
+      <td style="white-space:nowrap">${dt}</td>
+      <td>${s.remetente}</td>
+      <td style="max-width:400px;word-break:break-word">${escHtml(s.mensagem)}</td>
+      <td><span class="badge ${cls}">${s.tipo}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('sms-refresh').addEventListener('click', loadSMS);
+document.getElementById('sms-filter').addEventListener('change', loadSMS);
+document.getElementById('sms-clear').addEventListener('click', async () => {
+  if (!confirm('Apagar todos os SMS da base de dados?')) return;
+  await api('/sms', { method: 'DELETE' });
+  loadSMS();
+});
+
+// ── USSD CONSOLA ──────────────────────────────────────
+
+async function executarUSSD(codigo) {
+  const res    = document.getElementById('ussd-result');
+  const btn    = document.getElementById('ussd-run');
+  btn.disabled = true;
+  btn.textContent = 'A executar...';
+  res.className   = 'ussd-result';
+  res.textContent = 'A aguardar resposta do Arduino...';
+  res.classList.remove('hidden');
+
+  const data = await api('/ussd', {
+    method: 'POST',
+    body: JSON.stringify({ codigo })
+  });
+
+  btn.disabled    = false;
+  btn.textContent = 'Executar';
+
+  if (!data) {
+    res.className   = 'ussd-result error';
+    res.textContent = 'Erro de ligacao ao servidor.';
+    return;
+  }
+  if (!data.success) {
+    res.className   = 'ussd-result error';
+    res.textContent = data.error || 'Erro desconhecido';
+    return;
+  }
+  res.className   = 'ussd-result';
+  res.textContent = `Codigo: ${data.codigo}\n\n${data.resposta}`;
+}
+
+document.getElementById('ussd-run').addEventListener('click', () => {
+  const codigo = document.getElementById('ussd-input').value.trim();
+  if (!codigo) return;
+  executarUSSD(codigo);
+});
+
+document.getElementById('ussd-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('ussd-run').click();
+});
+
+document.querySelectorAll('.ussd-quick').forEach(el => {
+  el.addEventListener('click', () => {
+    const codigo = el.dataset.code;
+    document.getElementById('ussd-input').value = codigo;
+    executarUSSD(codigo);
+  });
+});
+
 const TITLES = {
   dashboard: 'Visao Geral',
   whatsapp:  'WhatsApp',
   telegram:  'Telegram',
   hardware:  'Hardware',
   pedidos:   'Pedidos',
+  sms:       'SMS Recebidos',
+  ussd:      'Consola USSD',
   logs:      'Registos do Sistema',
   settings:  'Definicoes',
 };
@@ -37,6 +124,7 @@ navLinks.forEach(link => {
     pageTitle.textContent = TITLES[sec] || sec;
     document.querySelector('.sidebar').classList.remove('open');
     if (sec === 'pedidos')  loadAllPedidos();
+    if (sec === 'sms')      loadSMS();
     if (sec === 'logs')     loadLogs();
     if (sec === 'settings') loadConfig();
   });

@@ -1,6 +1,7 @@
-const mqtt = require('mqtt');
+const mqtt   = require('mqtt');
 const Pedido = require('./models/pedido');
-const menu = require('./menu');
+const SMS    = require('./models/sms');
+const menu   = require('./menu');
 
 let client = null;
 let arduinoStatus = { connected: false, signal: 0, ts: null };
@@ -25,6 +26,7 @@ function connectMQTT() {
     client.subscribe('sms/entrada');
     client.subscribe('mb/confirmacao');
     client.subscribe('status/arduino');
+    client.subscribe('ussd/resultado');
   });
 
   client.on('message', async (topic, message) => {
@@ -40,6 +42,14 @@ function connectMQTT() {
         case 'status/arduino':
           arduinoStatus = { ...data, ts: Date.now() };
           break;
+        case 'ussd/resultado': {
+          const resolve = ussdPending.get(data.requestId);
+          if (resolve) {
+            resolve(data.resposta);
+            ussdPending.delete(data.requestId);
+          }
+          break;
+        }
       }
     } catch (error) {
       console.error(`Erro ao processar mensagem MQTT (${topic}):`, error);
@@ -51,11 +61,26 @@ function connectMQTT() {
   });
 }
 
+// Pendentes para USSD manual
+const ussdPending = new Map();
+
+function registerUssdRequest(requestId, resolve) {
+  ussdPending.set(requestId, resolve);
+}
+
 async function handleIncomingSMS(data) {
-  console.log('📩 SMS recebido:', data);
-  
-  const { remetente, mensagem, timestamp } = data;
-  
+  console.log('SMS recebido:', data);
+
+  const { remetente, mensagem } = data;
+
+  // Guardar no banco de dados
+  try {
+    const tipo = SMS.schema.statics.detectarTipo
+      ? SMS.detectarTipo(mensagem)
+      : (mensagem.toLowerCase().includes('confirmacao') ? 'mpesa' : mensagem.toLowerCase().includes('transferencia') ? 'emola' : 'outro');
+    await SMS.create({ remetente, mensagem, tipo });
+  } catch (e) { console.error('Erro ao guardar SMS:', e.message); }
+
   // Verificar se é confirmação M-Pesa
   const mPesaMatch = mensagem.match(/Confirmacao: Recebeu ([\d.]+)MT de (\+\d+)/);
   if (mPesaMatch) {
@@ -131,6 +156,23 @@ function isConnected() {
   return !!(client && client.connected);
 }
 
+function executarUSSD(codigo, timeoutMs = 20000) {
+  return new Promise((resolve) => {
+    const requestId = `ussd_${Date.now()}`;
+    const timer = setTimeout(() => {
+      ussdPending.delete(requestId);
+      resolve('TIMEOUT — sem resposta do Arduino');
+    }, timeoutMs);
+
+    ussdPending.set(requestId, (resp) => {
+      clearTimeout(timer);
+      resolve(resp);
+    });
+
+    publish('ussd/executar', { codigo, requestId });
+  });
+}
+
 function getArduinoStatus() {
   return arduinoStatus;
 }
@@ -139,5 +181,6 @@ module.exports = {
   connectMQTT,
   publish,
   isConnected,
-  getArduinoStatus
+  getArduinoStatus,
+  executarUSSD
 };

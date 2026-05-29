@@ -12,8 +12,9 @@ const telegramSales = require('./telegram-sales');
 const logger        = require('./logger');
 const monitor       = require('./monitor');
 const Cliente = require('./models/cliente');
-const Pedido = require('./models/pedido');
-const Pacote = require('./models/pacote');
+const Pedido  = require('./models/pedido');
+const Pacote  = require('./models/pacote');
+const SMS     = require('./models/sms');
 
 const app = express();
 app.use(cors());
@@ -255,6 +256,45 @@ app.get('/api/hardware', (req, res) => {
     telegram:      telegram.isActive()         ? 'connected' : 'disconnected',
     telegramSales: telegramSales.isActive()    ? 'connected' : 'disconnected'
   });
+});
+
+// ==================== SMS ====================
+
+app.get('/api/sms', async (req, res) => {
+  try {
+    const { tipo, limit = 100 } = req.query;
+    const filtro = tipo ? { tipo } : {};
+    const sms = await SMS.find(filtro).sort({ timestamp: -1 }).limit(Number(limit));
+    res.json({ success: true, data: sms });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.delete('/api/sms', async (req, res) => {
+  try {
+    await SMS.deleteMany({});
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ==================== USSD MANUAL ====================
+
+app.post('/api/ussd', async (req, res) => {
+  const { codigo } = req.body;
+  if (!codigo) return res.status(400).json({ error: 'Codigo USSD obrigatorio' });
+  if (!mqtt.isConnected()) return res.status(503).json({ error: 'MQTT nao conectado' });
+  if (!mqtt.getArduinoStatus().connected) return res.status(503).json({ error: 'Arduino nao conectado' });
+  try {
+    logger.info(`USSD manual: ${codigo}`);
+    const resposta = await mqtt.executarUSSD(codigo);
+    logger.info(`USSD resposta: ${resposta}`);
+    res.json({ success: true, codigo, resposta });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
 
 // ==================== LOGS ====================

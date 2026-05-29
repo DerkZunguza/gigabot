@@ -565,6 +565,50 @@ tr:hover td { background: var(--surface2); }
 .about-row span:first-child { color: var(--muted); }
 .about-row span:last-child  { font-weight: 500; }
 
+/* ── USSD ─────────────────────────────────────── */
+
+.ussd-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.ussd-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  font-family: monospace;
+  outline: none;
+  transition: border-color .2s;
+}
+.ussd-input:focus { border-color: var(--accent); }
+
+.ussd-result {
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: .85rem;
+  color: var(--green);
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+}
+.ussd-result.error { color: var(--red); }
+
+.ussd-quick {
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.ussd-quick:hover { border-color: var(--accent); }
+
 /* ── RESPONSIVE ─────────────────────────────────────── */
 
 @media (max-width: 900px) {
