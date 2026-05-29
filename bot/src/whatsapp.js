@@ -5,9 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const Cliente = require('./models/cliente');
 const Pedido = require('./models/pedido');
-const Pacote = require('./models/pacote');
-const menu = require('./menu');
-const mqttClient = require('./mqtt');
+const { handleUserMessage, showWelcome } = require('./menu');
 
 let sock = null;
 let qrCode = null;
@@ -33,6 +31,7 @@ async function startWhatsApp() {
           qrCode = url;
           connectionStatus = 'qr';
           if (qrCallback) qrCallback(url);
+          
         }
       });
     }
@@ -71,50 +70,41 @@ async function handleMessage(msg) {
 
   console.log(`📩 Mensagem de ${remoteJid}: ${messageContent}`);
 
-  // Buscar ou criar cliente
-  let cliente = await Cliente.findOne({ whatsapp: remoteJid });
-  if (!cliente) {
-    cliente = new Cliente({
-      whatsapp: remoteJid,
-      nome: remoteJid.split('@')[0]
-    });
-    await cliente.save();
-  }
+  try {
+    // Buscar ou criar cliente
+    let cliente = await Cliente.findOne({ whatsapp: remoteJid });
+    if (!cliente) {
+      cliente = new Cliente({
+        whatsapp: remoteJid,
+        nome: remoteJid.split('@')[0],
+        estadoAtual: 'aguardando_boas_vindas'
+      });
+      await cliente.save();
+      console.log(`✅ Novo cliente registrado: ${remoteJid}`);
+    }
 
-  // Processar mensagem baseado no estado
-  switch (cliente.estado) {
-    case 'menu':
-      await menu.handleMenuInput(sock, remoteJid, messageContent, cliente);
-      break;
-    case 'aguardando_pagamento':
-      await menu.handlePaymentWaiting(sock, remoteJid, messageContent, cliente);
-      break;
-    case 'aguardando_confirmacao':
-      await menu.handleConfirmation(sock, remoteJid, messageContent, cliente);
-      break;
-    default:
-      await menu.showMainMenu(sock, remoteJid, cliente);
+    // Processar mensagem com novo handler
+    await handleUserMessage(sock, remoteJid, messageContent, cliente);
+  } catch (error) {
+    console.error('Erro ao processar mensagem:', error);
+    await sock.sendMessage(remoteJid, { 
+      text: `❌ Erro ao processar sua mensagem. Digite *MENU* para tentar novamente.` 
+    });
   }
 }
 
 async function sendMessage(jid, text) {
-  if (!sock || connectionStatus !== 'connected') {
-    throw new Error('WhatsApp não conectado');
+  if (!sock) {
+    throw new Error('WhatsApp não está conectado');
   }
-  await sock.sendMessage(jid, { text });
-}
-
-async function sendMenu(jid, text) {
-  if (!sock || connectionStatus !== 'connected') {
-    throw new Error('WhatsApp não conectado');
-  }
-  await sock.sendMessage(jid, { text });
+  return await sock.sendMessage(jid, { text });
 }
 
 function getStatus() {
   return {
     status: connectionStatus,
-    qrCode: qrCode
+    qrCode: qrCode,
+    socket: sock ? 'ready' : 'not_ready'
   };
 }
 
@@ -123,22 +113,16 @@ function setQRCallback(callback) {
 }
 
 async function restart() {
-  const authPath = path.join(__dirname, 'auth_info_baileys');
-  if (fs.existsSync(authPath)) {
-    fs.rmSync(authPath, { recursive: true, force: true });
+  if (sock) {
+    await sock.logout();
   }
-  
-  connectionStatus = 'disconnected';
-  qrCode = null;
-  
-  await startWhatsApp();
+  startWhatsApp();
 }
 
 module.exports = {
   startWhatsApp,
-  sendMessage,
   getStatus,
+  sendMessage,
   setQRCallback,
-  restart,
-  getConnectionStatus: () => connectionStatus
+  restart
 };

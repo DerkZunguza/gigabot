@@ -5,24 +5,35 @@ const pacoteSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  preco: {
+  tipo: {
+    type: String,
+    enum: ['diario', 'mensal', 'diamante'],
+    required: true
+  },
+  mb: {
     type: Number,
     required: true
   },
-  codigoUSSD: {
-    type: String,
+  mbFormatado: String, // "650MB", "5GB", etc
+  preco: {
+    type: Number,
     required: true
   },
   operadora: {
     type: String,
     enum: ['vodacom', 'movitel'],
-    required: true
+    default: 'vodacom'
   },
-  mb: String,
+  codigoUSSD: String,
   validade: String,
+  descricao: String,
   ativo: {
     type: Boolean,
     default: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 

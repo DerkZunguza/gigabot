@@ -4,8 +4,15 @@ const menu = require('./menu');
 
 let client = null;
 
+function buildBrokerUrl() {
+  const broker = process.env.MQTT_BROKER || 'mosquitto';
+  const port = process.env.MQTT_PORT || '1883';
+  if (broker.startsWith('mqtt://') || broker.startsWith('mqtts://')) return broker;
+  return `mqtt://${broker}:${port}`;
+}
+
 function connectMQTT() {
-  const brokerUrl = process.env.MQTT_BROKER || 'mqtt://mosquitto:1883';
+  const brokerUrl = buildBrokerUrl();
   const username = process.env.MQTT_USERNAME || 'mqtt_user';
   const password = process.env.MQTT_PASSWORD || 'mqtt_password';
 
@@ -24,15 +31,18 @@ function connectMQTT() {
   });
 
   client.on('message', async (topic, message) => {
-    const data = JSON.parse(message.toString());
-    
-    switch (topic) {
-      case 'sms/entrada':
-        await handleIncomingSMS(data);
-        break;
-      case 'mb/confirmacao':
-        await handleActivationConfirmation(data);
-        break;
+    try {
+      const data = JSON.parse(message.toString());
+      switch (topic) {
+        case 'sms/entrada':
+          await handleIncomingSMS(data);
+          break;
+        case 'mb/confirmacao':
+          await handleActivationConfirmation(data);
+          break;
+      }
+    } catch (error) {
+      console.error(`Erro ao processar mensagem MQTT (${topic}):`, error);
     }
   });
 
@@ -70,8 +80,9 @@ async function handleIncomingSMS(data) {
 }
 
 async function verificarPagamento(telefone, valor, referencia, metodo) {
-  // Converter formato de telefone (25884XXXXXXX -> 25884XXXXXXX@s.whatsapp.net)
-  const whatsappJid = telefone.includes('@') ? telefone : `${telefone}@s.whatsapp.net`;
+  // +258841234567 → 258841234567@s.whatsapp.net
+  const numeroLimpo = telefone.replace('+', '');
+  const whatsappJid = numeroLimpo.includes('@') ? numeroLimpo : `${numeroLimpo}@s.whatsapp.net`;
   
   // Buscar pedido pendente para este cliente
   const pedido = await Pedido.findOne({

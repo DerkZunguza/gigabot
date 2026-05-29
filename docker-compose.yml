@@ -37,7 +37,7 @@ services:
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0
 
-  mqtt:
+  mosquitto:
     image: eclipse-mosquitto:2.0.14
     container_name: mb-mosquitto
     restart: unless-stopped
@@ -60,8 +60,6 @@ services:
       - traefik-public
     volumes:
       - mongo-data:/data/db
-    environment:
-      MONGO_INITDB_DATABASE: mb_bot
 
   mongo-express:
     image: mongo-express:1.0.0
@@ -71,8 +69,7 @@ services:
       - traefik-public
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/mb_bot
-      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_USER}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_BASICAUTH: "false"
     depends_on:
       - mongo
     labels:
