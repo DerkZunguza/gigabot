@@ -21,7 +21,7 @@
 SoftwareSerial sim900(SIM900_RX, SIM900_TX);
 TinyGsm modem(sim900);
 TinyGsmClient gsmClient(modem);
-PubSubClient mqtt(gsmClient);
+PubSubClient mqtt(gsmClient); 
 
 unsigned long lastSMSCheck = 0;
 const unsigned long SMS_CHECK_INTERVAL = 5000;

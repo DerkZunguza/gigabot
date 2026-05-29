@@ -1,6 +1,6 @@
 services:
   bot:
-    build: ./bot
+    image: ghcr.io/derkzunguza/mb-bot:latest
     container_name: mb-bot
     restart: unless-stopped
     networks:
