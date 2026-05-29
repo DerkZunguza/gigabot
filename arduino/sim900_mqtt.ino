@@ -1,18 +1,22 @@
+#define TINY_GSM_MODEM_SIM900
 #include <SoftwareSerial.h>
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
 
-// Configuração SIM900
-#define SIM900_RX 7
-#define SIM900_TX 8
+// Pinos iguais ao teu sketch que funciona: SoftwareSerial(RX, TX)
+#define SIM900_RX 8
+#define SIM900_TX 7
 #define SIM900_BAUD 9600
 
 // Configuração MQTT
-#define MQTT_BROKER "seu-mqtt-broker.com"
+#define MQTT_BROKER "acsqsrelatoriosapi.eurekaplatformapi.xyz"
 #define MQTT_PORT 1883
-#define MQTT_USERNAME "mqtt_user"
-#define MQTT_PASSWORD "mqtt_password"
+#define MQTT_USERNAME "arduino"
+#define MQTT_PASSWORD "arduino_password_change_this"
 #define MQTT_TOPIC_SMS "sms/entrada"
+
+// APN da Vodacom Moçambique
+#define GPRS_APN "internet"
 
 SoftwareSerial sim900(SIM900_RX, SIM900_TX);
 TinyGsm modem(sim900);
@@ -20,39 +24,27 @@ TinyGsmClient gsmClient(modem);
 PubSubClient mqtt(gsmClient);
 
 unsigned long lastSMSCheck = 0;
-const unsigned long SMS_CHECK_INTERVAL = 5000; // 5 segundos
+const unsigned long SMS_CHECK_INTERVAL = 5000;
 
 void setup() {
   Serial.begin(9600);
   sim900.begin(SIM900_BAUD);
-  
-  Serial.println("Iniciando SIM900...");
-  
-  // Inicializar modem
-  if (!modem.init()) {
-    Serial.println("Falha ao inicializar modem");
-    while (true);
-  }
-  
-  Serial.println("Modem inicializado com sucesso");
-  
-  // Configurar GPRS
-  Serial.println("Configurando GPRS...");
-  if (!modem.gprsConnect("internet", "", "")) {
-    Serial.println("Falha ao conectar GPRS");
-    while (true);
-  }
-  
-  Serial.println("GPRS conectado");
+  delay(2000); // esperar modem estabilizar (já está ligado)
+
+  Serial.println("SIM900 pronto. A configurar GPRS...");
+
+  // Modem já está ligado — não precisamos de init()
+  // Apenas conectar GPRS
+  modem.gprsConnect(GPRS_APN, "", "");
+
   Serial.print("IP: ");
   Serial.println(modem.getLocalIP());
-  
-  // Configurar MQTT
+
   mqtt.setServer(MQTT_BROKER, MQTT_PORT);
   mqtt.setCallback(mqttCallback);
-  
+
   connectMQTT();
-  
+
   Serial.println("Sistema pronto!");
 }
 
@@ -141,30 +133,56 @@ void processActivation(String message) {
   Serial.println("Confirmação enviada");
 }
 
-void checkSMS() {
-  int smsNum = modem.getSMSQuantity();
-  
-  if (smsNum > 0) {
-    Serial.print("SMS recebidos: ");
-    Serial.println(smsNum);
-    
-    for (int i = 1; i <= smsNum; i++) {
-      String smsText = "";
-      String sender = "";
-      
-      if (modem.readSMS(i, smsText, 64, sender, 20)) {
-        Serial.println("SMS de " + sender + ": " + smsText);
-        
-        // Publicar no MQTT
-        String payload = "{\"remetente\":\"" + sender + "\",\"mensagem\":\"" + smsText + "\",\"timestamp\":" + String(millis()) + "}";
-        mqtt.publish(MQTT_TOPIC_SMS, payload.c_str());
-        
-        // Deletar SMS após processar
-        modem.deleteSMS(i);
-        i--; // Ajustar índice após deletar
-      }
-    }
+// TinyGSM não expõe getSMSQuantity/readSMS/deleteSMS no SIM800.
+// Usamos AT commands directamente via SoftwareSerial.
+
+String sendATCmd(String cmd, unsigned long wait = 500) {
+  while (sim900.available()) sim900.read();
+  sim900.println(cmd);
+  String resp = "";
+  unsigned long start = millis();
+  while (millis() - start < wait) {
+    while (sim900.available()) resp += (char)sim900.read();
   }
+  return resp;
+}
+
+void checkSMS() {
+  sendATCmd("AT+CMGF=1", 200);
+  String resp = sendATCmd("AT+CMGL=\"REC UNREAD\"", 2000);
+
+  if (resp.indexOf("+CMGL:") < 0) return;
+
+  int pos = 0;
+  while (true) {
+    int hdr = resp.indexOf("+CMGL:", pos);
+    if (hdr < 0) break;
+
+    // Cabeçalho: +CMGL: idx,"REC UNREAD","remetente",,"data"
+    // Procurar o 3.º campo entre aspas (remetente)
+    int q1 = resp.indexOf(",\"", hdr) + 2;
+    int q2 = resp.indexOf("\"", q1);
+    int q3 = resp.indexOf(",\"", q2) + 2;
+    int q4 = resp.indexOf("\"", q3);
+    String sender = resp.substring(q3, q4);
+
+    // Corpo do SMS está na linha seguinte
+    int nl  = resp.indexOf('\n', q4) + 1;
+    int nl2 = resp.indexOf('\n', nl);
+    if (nl2 < 0) nl2 = resp.length();
+    String body = resp.substring(nl, nl2);
+    body.trim();
+
+    if (body.length() > 0) {
+      Serial.println("SMS de " + sender + ": " + body);
+      String payload = "{\"remetente\":\"" + sender + "\",\"mensagem\":\"" + body + "\",\"timestamp\":" + String(millis()) + "}";
+      mqtt.publish(MQTT_TOPIC_SMS, payload.c_str());
+    }
+
+    pos = nl2;
+  }
+
+  sendATCmd("AT+CMGDA=\"DEL READ\"", 500);
 }
 
 String sendUSSD(String ussdCode) {
