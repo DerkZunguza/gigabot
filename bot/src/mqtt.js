@@ -3,6 +3,7 @@ const Pedido = require('./models/pedido');
 const menu = require('./menu');
 
 let client = null;
+let arduinoStatus = { connected: false, signal: 0, ts: null };
 
 function buildBrokerUrl() {
   const broker = process.env.MQTT_BROKER || 'mosquitto';
@@ -23,6 +24,7 @@ function connectMQTT() {
     // Inscrever nos tópicos
     client.subscribe('sms/entrada');
     client.subscribe('mb/confirmacao');
+    client.subscribe('status/arduino');
   });
 
   client.on('message', async (topic, message) => {
@@ -34,6 +36,9 @@ function connectMQTT() {
           break;
         case 'mb/confirmacao':
           await handleActivationConfirmation(data);
+          break;
+        case 'status/arduino':
+          arduinoStatus = { ...data, ts: Date.now() };
           break;
       }
     } catch (error) {
@@ -126,8 +131,13 @@ function isConnected() {
   return !!(client && client.connected);
 }
 
+function getArduinoStatus() {
+  return arduinoStatus;
+}
+
 module.exports = {
   connectMQTT,
   publish,
-  isConnected
+  isConnected,
+  getArduinoStatus
 };

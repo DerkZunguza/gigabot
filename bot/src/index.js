@@ -244,13 +244,16 @@ app.post('/api/pair', async (req, res) => {
 // ==================== HARDWARE STATUS ====================
 
 app.get('/api/hardware', (req, res) => {
-  const fs = require('fs');
+  const arduino = mqtt.getArduinoStatus();
+  // Status considerado fresco se recebido nos ultimos 3 minutos
+  const fresh   = arduino.ts && (Date.now() - arduino.ts) < 3 * 60 * 1000;
   res.json({
-    whatsapp: whatsapp.getStatus().status,
-    mqtt:     mqtt.isConnected()      ? 'connected' : 'disconnected',
-    arduino:  fs.existsSync('/dev/ttyUSB0') ? 'connected' : 'disconnected',
-    telegram:      telegram.isActive()      ? 'connected' : 'disconnected',
-    telegramSales: telegramSales.isActive() ? 'connected' : 'disconnected'
+    whatsapp:      whatsapp.getStatus().status,
+    mqtt:          mqtt.isConnected()         ? 'connected' : 'disconnected',
+    arduino:       (fresh && arduino.connected) ? 'connected' : 'disconnected',
+    arduinoSignal: arduino.signal || 0,
+    telegram:      telegram.isActive()         ? 'connected' : 'disconnected',
+    telegramSales: telegramSales.isActive()    ? 'connected' : 'disconnected'
   });
 });
 

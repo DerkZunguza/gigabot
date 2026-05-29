@@ -139,6 +139,8 @@ async function checkHardware() {
   setHw('hw-mqtt',          data.mqtt);
   setHw('hw-arduino',       data.arduino);
   setHw('hw-whatsapp',      data.whatsapp);
+  const sigEl = document.getElementById('hw-arduino-signal');
+  if (sigEl) sigEl.textContent = data.arduinoSignal || '--';
   setHw('hw-telegram',      data.telegram);
   setHw('hw-telegram-sales',data.telegramSales);
 

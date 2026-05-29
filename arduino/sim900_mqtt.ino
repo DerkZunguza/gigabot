@@ -1,227 +1,244 @@
-#define TINY_GSM_MODEM_SIM900
+/*
+ * GigaBot MZ — Arduino SIM900
+ *
+ * Responsabilidades:
+ *   - Monitorizar SMS recebidos e enviar ao Worker Python via Serial
+ *   - Executar codigos USSD recebidos pelo Serial e devolver a resposta
+ *
+ * Comunicacao com o Worker Python via Serial (9600 baud):
+ *
+ *   Arduino → Python (SMS recebido):
+ *     SMS|+258841234567|Confirmacao: Recebeu 100MT...
+ *
+ *   Python → Arduino (executar USSD):
+ *     USSD:*123*1*2#
+ *   Arduino → Python (resposta USSD):
+ *     USSD_RESP|Pacote de 100MB activado com sucesso
+ *
+ *   Python → Arduino (verificar estado):
+ *     STATUS
+ *   Arduino → Python:
+ *     STATUS|OK|signal=15
+ *
+ * Pinos: SIM900 TX → Arduino pino 7, SIM900 RX → Arduino pino 8
+ */
+
 #include <SoftwareSerial.h>
-#include <TinyGsmClient.h>
-#include <PubSubClient.h>
 
-// Pinos iguais ao teu sketch que funciona: SoftwareSerial(RX, TX)
-#define SIM900_RX 8
-#define SIM900_TX 7
-#define SIM900_BAUD 9600
+SoftwareSerial sim900(7, 8); // RX=7, TX=8
 
-// Configuração MQTT
-#define MQTT_BROKER "acsqsrelatoriosapi.eurekaplatformapi.xyz"
-#define MQTT_PORT 1883
-#define MQTT_USERNAME "bot"
-#define MQTT_PASSWORD "eurekav1gigabot123"
-#define MQTT_TOPIC_SMS "sms/entrada"
+String cmdBuffer = "";
+unsigned long ultimaVerificacaoSMS = 0;
+const unsigned long INTERVALO_SMS   = 10000; // verificar SMS a cada 10s
 
-// APN da Vodacom Moçambique
-#define GPRS_APN "internet"
-
-SoftwareSerial sim900(SIM900_RX, SIM900_TX);
-TinyGsm modem(sim900);
-TinyGsmClient gsmClient(modem);
-PubSubClient mqtt(gsmClient); 
-
-unsigned long lastSMSCheck = 0;
-const unsigned long SMS_CHECK_INTERVAL = 5000;
+// ── SETUP ─────────────────────────────────────────────
 
 void setup() {
   Serial.begin(9600);
-  sim900.begin(SIM900_BAUD);
-  delay(2000); // esperar modem estabilizar (já está ligado)
+  sim900.begin(9600);
+  delay(3000);
 
-  Serial.println("SIM900 pronto. A configurar GPRS...");
+  Serial.println("STATUS|INICIANDO");
 
-  // Modem já está ligado — não precisamos de init()
-  // Apenas conectar GPRS
-  modem.gprsConnect(GPRS_APN, "", "");
+  // Configurar SMS em modo texto
+  enviarAT("ATE0");          // desligar echo
+  enviarAT("AT+CMGF=1");    // modo texto SMS
+  enviarAT("AT+CNMI=2,2,0,0,0"); // notificacao imediata de SMS recebido
+  enviarAT("AT+CSCS=\"GSM\""); // charset GSM
 
-  Serial.print("IP: ");
-  Serial.println(modem.getLocalIP());
-
-  mqtt.setServer(MQTT_BROKER, MQTT_PORT);
-  mqtt.setCallback(mqttCallback);
-
-  connectMQTT();
-
-  Serial.println("Sistema pronto!");
+  Serial.println("STATUS|OK|signal=" + String(verificarSinal()));
 }
+
+// ── LOOP ──────────────────────────────────────────────
 
 void loop() {
-  if (!mqtt.connected()) {
-    connectMQTT();
+  // Dados do SIM900 → processar
+  if (sim900.available()) {
+    processarRespostaSIM900(lerLinha());
   }
-  
-  mqtt.loop();
-  
-  // Verificar SMS periodicamente
-  if (millis() - lastSMSCheck > SMS_CHECK_INTERVAL) {
-    checkSMS();
-    lastSMSCheck = millis();
-  }
-  
-  // Processar comandos da serial
-  if (Serial.available()) {
-    String command = Serial.readStringUntil('\n');
-    command.trim();
-    processCommand(command);
-  }
-}
 
-void connectMQTT() {
-  Serial.print("Conectando ao MQTT...");
-  
-  while (!mqtt.connected()) {
-    if (mqtt.connect("SIM900_Client", MQTT_USERNAME, MQTT_PASSWORD)) {
-      Serial.println("conectado!");
-      mqtt.subscribe("mb/activar");
-    } else {
-      Serial.print("Falha, rc=");
-      Serial.print(mqtt.state());
-      Serial.println(" tentando novamente em 5 segundos...");
-      delay(5000);
+  // Comandos do Worker Python → executar
+  if (Serial.available()) {
+    char c = Serial.read();
+    if (c == '\n') {
+      cmdBuffer.trim();
+      if (cmdBuffer.length() > 0) {
+        processarComando(cmdBuffer);
+      }
+      cmdBuffer = "";
+    } else if (c != '\r') {
+      cmdBuffer += c;
     }
   }
-}
 
-void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Mensagem recebida [");
-  Serial.print(topic);
-  Serial.print("]: ");
-  
-  String message = "";
-  for (unsigned int i = 0; i < length; i++) {
-    message += (char)payload[i];
-  }
-  Serial.println(message);
-  
-  // Processar comando de activação
-  if (String(topic) == "mb/activar") {
-    processActivation(message);
+  // Verificar SMS periodicamente
+  if (millis() - ultimaVerificacaoSMS > INTERVALO_SMS) {
+    verificarSMSNovos();
+    ultimaVerificacaoSMS = millis();
   }
 }
 
-void processActivation(String message) {
-  // Extrair dados do JSON
-  // Formato esperado: {"pedidoId":"xxx","telefone":"xxx","codigoUSSD":"xxx","operadora":"xxx"}
-  
-  int pedidoIdStart = message.indexOf("\"pedidoId\":\"") + 12;
-  int pedidoIdEnd = message.indexOf("\"", pedidoIdStart);
-  String pedidoId = message.substring(pedidoIdStart, pedidoIdEnd);
-  
-  int telefoneStart = message.indexOf("\"telefone\":\"") + 12;
-  int telefoneEnd = message.indexOf("\"", telefoneStart);
-  String telefone = message.substring(telefoneStart, telefoneEnd);
-  
-  int codigoStart = message.indexOf("\"codigoUSSD\":\"") + 14;
-  int codigoEnd = message.indexOf("\"", codigoStart);
-  String codigoUSSD = message.substring(codigoStart, codigoEnd);
-  
-  Serial.println("Activando pacote:");
-  Serial.println("Pedido ID: " + pedidoId);
-  Serial.println("Telefone: " + telefone);
-  Serial.println("Código USSD: " + codigoUSSD);
-  
-  // Enviar comando USSD
-  String resultado = sendUSSD(codigoUSSD);
-  
-  // Publicar confirmação
-  String confirmation = "{\"pedidoId\":\"" + pedidoId + "\",\"sucesso\":true,\"mensagem\":\"" + resultado + "\"}";
-  mqtt.publish("mb/confirmacao", confirmation.c_str());
-  
-  Serial.println("Confirmação enviada");
+// ── COMANDOS DO PYTHON ────────────────────────────────
+
+void processarComando(String cmd) {
+  if (cmd.startsWith("USSD:")) {
+    String codigo = cmd.substring(5);
+    codigo.trim();
+    String resp = executarUSSD(codigo);
+    Serial.println("USSD_RESP|" + resp);
+
+  } else if (cmd == "STATUS") {
+    Serial.println("STATUS|OK|signal=" + String(verificarSinal()));
+
+  } else if (cmd == "SMS_CHECK") {
+    verificarSMSNovos();
+
+  } else {
+    // Passagem directa de AT command (para debug)
+    sim900.println(cmd);
+  }
 }
 
-// TinyGSM não expõe getSMSQuantity/readSMS/deleteSMS no SIM800.
-// Usamos AT commands directamente via SoftwareSerial.
+// ── SMS ───────────────────────────────────────────────
 
-String sendATCmd(String cmd, unsigned long wait = 500) {
-  while (sim900.available()) sim900.read();
-  sim900.println(cmd);
+void verificarSMSNovos() {
+  sim900.println("AT+CMGL=\"REC UNREAD\"");
+  delay(1500);
+
   String resp = "";
-  unsigned long start = millis();
-  while (millis() - start < wait) {
+  unsigned long t = millis();
+  while (millis() - t < 1500) {
     while (sim900.available()) resp += (char)sim900.read();
   }
-  return resp;
-}
-
-void checkSMS() {
-  sendATCmd("AT+CMGF=1", 200);
-  String resp = sendATCmd("AT+CMGL=\"REC UNREAD\"", 2000);
 
   if (resp.indexOf("+CMGL:") < 0) return;
 
+  // Parsear cada SMS na resposta
   int pos = 0;
   while (true) {
     int hdr = resp.indexOf("+CMGL:", pos);
     if (hdr < 0) break;
 
-    // Cabeçalho: +CMGL: idx,"REC UNREAD","remetente",,"data"
-    // Procurar o 3.º campo entre aspas (remetente)
+    // Extrair remetente do cabecalho: +CMGL: idx,"REC UNREAD","remetente",,"data"
     int q1 = resp.indexOf(",\"", hdr) + 2;
-    int q2 = resp.indexOf("\"", q1);
+    int q2 = resp.indexOf("\"", q1);           // fim status
     int q3 = resp.indexOf(",\"", q2) + 2;
-    int q4 = resp.indexOf("\"", q3);
-    String sender = resp.substring(q3, q4);
+    int q4 = resp.indexOf("\"", q3);           // fim remetente
+    String remetente = resp.substring(q3, q4);
 
-    // Corpo do SMS está na linha seguinte
+    // Corpo na linha seguinte
     int nl  = resp.indexOf('\n', q4) + 1;
     int nl2 = resp.indexOf('\n', nl);
     if (nl2 < 0) nl2 = resp.length();
-    String body = resp.substring(nl, nl2);
-    body.trim();
+    String corpo = resp.substring(nl, nl2);
+    corpo.trim();
 
-    if (body.length() > 0) {
-      Serial.println("SMS de " + sender + ": " + body);
-      String payload = "{\"remetente\":\"" + sender + "\",\"mensagem\":\"" + body + "\",\"timestamp\":" + String(millis()) + "}";
-      mqtt.publish(MQTT_TOPIC_SMS, payload.c_str());
+    if (corpo.length() > 0 && remetente.length() > 0) {
+      // Sanitizar — remover pipes que possam partir o formato
+      corpo.replace("|", " ");
+      remetente.replace("|", " ");
+      Serial.println("SMS|" + remetente + "|" + corpo);
     }
 
     pos = nl2;
   }
 
-  sendATCmd("AT+CMGDA=\"DEL READ\"", 500);
+  // Apagar SMS lidos
+  sim900.println("AT+CMGDA=\"DEL READ\"");
+  delay(300);
+  while (sim900.available()) sim900.read();
 }
 
-String sendUSSD(String ussdCode) {
-  Serial.println("Enviando USSD: " + ussdCode);
-  
-  String response = modem.sendUSSD(ussdCode);
-  
-  Serial.println("Resposta USSD: " + response);
-  
-  // Cancelar USSD session
-  modem.sendUSSD("");
-  
-  return response;
+void processarRespostaSIM900(String linha) {
+  // SMS recebido em tempo real (+CMT)
+  // Formato: +CMT: "remetente","","data"
+  if (linha.startsWith("+CMT:")) {
+    int q1 = linha.indexOf("\"") + 1;
+    int q2 = linha.indexOf("\"", q1);
+    String remetente = linha.substring(q1, q2);
+
+    // Corpo e a proxima linha — ler com pequeno delay
+    delay(100);
+    String corpo = "";
+    unsigned long t = millis();
+    while (millis() - t < 500) {
+      while (sim900.available()) corpo += (char)sim900.read();
+    }
+    corpo.trim();
+    corpo.replace("|", " ");
+
+    if (corpo.length() > 0) {
+      Serial.println("SMS|" + remetente + "|" + corpo);
+    }
+  }
 }
 
-void processCommand(String command) {
-  Serial.println("Comando recebido: " + command);
-  
-  if (command.startsWith("USSD:")) {
-    // Formato: USSD:telefone:codigo
-    int firstColon = command.indexOf(':');
-    int secondColon = command.indexOf(':', firstColon + 1);
-    
-    String telefone = command.substring(firstColon + 1, secondColon);
-    String codigo = command.substring(secondColon + 1);
-    
-    String resultado = sendUSSD(codigo);
-    Serial.println("OK:" + resultado);
+// ── USSD ──────────────────────────────────────────────
+
+String executarUSSD(String codigo) {
+  // Limpar buffer
+  while (sim900.available()) sim900.read();
+
+  sim900.println("AT+CUSD=1,\"" + codigo + "\",15");
+  delay(8000); // USSD pode demorar ate 8s
+
+  String resp = "";
+  unsigned long t = millis();
+  while (millis() - t < 5000) {
+    while (sim900.available()) resp += (char)sim900.read();
+    if (resp.indexOf("+CUSD:") >= 0) break;
+    delay(100);
   }
-  else if (command == "SIGNAL") {
-    int signal = modem.getSignalQuality();
-    Serial.println("OK:Signal=" + String(signal));
+
+  // Extrair texto da resposta: +CUSD: 0,"texto",15
+  int inicio = resp.indexOf("+CUSD:");
+  if (inicio >= 0) {
+    int q1 = resp.indexOf("\"", inicio) + 1;
+    int q2 = resp.indexOf("\"", q1);
+    if (q1 > 0 && q2 > q1) {
+      return resp.substring(q1, q2);
+    }
   }
-  else if (command == "BALANCE") {
-    String balance = modem.sendUSSD("*#100#");
-    modem.sendUSSD("");
-    Serial.println("OK:Balance=" + balance);
+
+  return resp.length() > 0 ? resp : "SEM_RESPOSTA";
+}
+
+// ── UTILIDADES ────────────────────────────────────────
+
+String enviarAT(String cmd) {
+  while (sim900.available()) sim900.read();
+  sim900.println(cmd);
+  delay(300);
+  String resp = "";
+  unsigned long t = millis();
+  while (millis() - t < 300) {
+    while (sim900.available()) resp += (char)sim900.read();
   }
-  else {
-    Serial.println("OK:Comando desconhecido");
+  return resp;
+}
+
+int verificarSinal() {
+  String resp = enviarAT("AT+CSQ");
+  int idx = resp.indexOf("+CSQ: ");
+  if (idx < 0) idx = resp.indexOf("+CSQ:");
+  if (idx >= 0) {
+    int start = idx + 5;
+    while (start < resp.length() && resp[start] == ' ') start++;
+    int end = resp.indexOf(",", start);
+    if (end > start) return resp.substring(start, end).toInt();
   }
+  return 0;
+}
+
+String lerLinha() {
+  String linha = "";
+  unsigned long t = millis();
+  while (millis() - t < 200) {
+    while (sim900.available()) {
+      char c = sim900.read();
+      if (c == '\n') return linha;
+      if (c != '\r') linha += c;
+    }
+  }
+  return linha;
 }

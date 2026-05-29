@@ -1,86 +1,94 @@
 import paho.mqtt.client as mqtt
 import json
 import os
+import time
+import threading
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class MQTTHandler:
     def __init__(self):
-        self.client = None
-        self.broker = os.getenv('MQTT_BROKER', 'mosquitto')
-        self.port = int(os.getenv('MQTT_PORT', 1883))
-        self.username = os.getenv('MQTT_USERNAME', 'mqtt_user')
-        self.password = os.getenv('MQTT_PASSWORD', 'mqtt_password')
-    
+        self.client     = None
+        self.broker     = os.getenv('MQTT_BROKER', 'mosquitto')
+        self.port       = int(os.getenv('MQTT_PORT', 1883))
+        self._ussd      = None
+        self._connected = False
+
+    def set_ussd_handler(self, ussd_handler):
+        self._ussd = ussd_handler
+
     def connect(self):
-        self.client = mqtt.Client()
-        self.client.username_pw_set(self.username, self.password)
-        
-        self.client.on_connect = self.on_connect
-        self.client.on_message = self.on_message
-        self.client.on_disconnect = self.on_disconnect
-        
-        try:
-            self.client.connect(self.broker, self.port, 60)
-            self.client.loop_start()
-            print('✅ Conectado ao broker MQTT')
-        except Exception as e:
-            print(f'❌ Erro ao conectar ao MQTT: {e}')
-    
-    def on_connect(self, client, userdata, flags, rc):
+        self.client = mqtt.Client(client_id='worker', clean_session=True)
+        self.client.on_connect    = self._on_connect
+        self.client.on_message    = self._on_message
+        self.client.on_disconnect = self._on_disconnect
+
+        while True:
+            try:
+                self.client.connect(self.broker, self.port, keepalive=60)
+                self.client.loop_start()
+                print('Worker MQTT conectado')
+                break
+            except Exception as e:
+                print(f'Erro MQTT: {e}. Tentando em 5s...')
+                time.sleep(5)
+
+    def _on_connect(self, client, userdata, flags, rc):
         if rc == 0:
-            print('✅ MQTT conectado com sucesso')
+            self._connected = True
             client.subscribe('mb/activar')
+            self._publicar_status_arduino()
+            t = threading.Thread(target=self._status_loop, daemon=True)
+            t.start()
         else:
-            print(f'❌ Falha na conexão MQTT: {rc}')
-    
-    def on_message(self, client, userdata, msg):
+            print(f'Falha MQTT rc={rc}')
+
+    def _on_disconnect(self, client, userdata, rc):
+        self._connected = False
+
+    def _on_message(self, client, userdata, msg):
         try:
             data = json.loads(msg.payload.decode())
-            print(f'📩 Mensagem MQTT recebida: {msg.topic} - {data}')
-            
             if msg.topic == 'mb/activar':
-                self.handle_activation(data)
+                self._handle_activacao(data)
         except Exception as e:
-            print(f'❌ Erro ao processar mensagem MQTT: {e}')
-    
-    def on_disconnect(self, client, userdata, rc):
-        print(f'🔌 MQTT desconectado: {rc}')
-    
-    def handle_activation(self, data):
-        from ussd_handler import USSDHandler
-        ussd_handler = USSDHandler()
-        
-        pedido_id = data.get('pedidoId')
-        telefone = data.get('telefone')
+            print(f'Erro ao processar mensagem MQTT: {e}')
+
+    def _handle_activacao(self, data):
+        if not self._ussd:
+            return
+        pedido_id   = data.get('pedidoId')
         codigo_ussd = data.get('codigoUSSD')
-        
-        try:
-            resultado = ussd_handler.send_ussd(telefone, codigo_ussd)
-            
-            # Publicar confirmação
-            confirmation = {
-                'pedidoId': pedido_id,
-                'sucesso': resultado.get('sucesso', False),
-                'mensagem': resultado.get('mensagem', '')
-            }
-            
-            self.client.publish('mb/confirmacao', json.dumps(confirmation))
-            print(f'✅ Confirmação publicada: {confirmation}')
-        except Exception as e:
-            print(f'❌ Erro ao activar pacote: {e}')
-            
-            confirmation = {
-                'pedidoId': pedido_id,
-                'sucesso': False,
-                'mensagem': str(e)
-            }
-            self.client.publish('mb/confirmacao', json.dumps(confirmation))
-    
+        print(f'Activando pedido {pedido_id} com USSD {codigo_ussd}')
+        resultado = self._ussd.send_ussd(codigo_ussd)
+        self.client.publish('mb/confirmacao', json.dumps({
+            'pedidoId': pedido_id,
+            'sucesso':  resultado.get('sucesso', False),
+            'mensagem': resultado.get('mensagem', '')
+        }))
+
+    def _publicar_status_arduino(self):
+        if not self._ussd:
+            return
+        status = self._ussd.get_status()
+        self.client.publish('status/arduino', json.dumps({
+            'connected': status.get('connected', False),
+            'signal':    status.get('signal', 0),
+            'ts':        int(time.time() * 1000)
+        }), retain=True)
+
+    def _status_loop(self):
+        while True:
+            time.sleep(60)
+            try:
+                self._publicar_status_arduino()
+            except Exception:
+                pass
+
     def publish_sms(self, sms_data):
-        if self.client and self.client.is_connected():
+        if self.client and self._connected:
             self.client.publish('sms/entrada', json.dumps(sms_data))
-            print(f'📤 SMS publicado no MQTT: {sms_data}')
-        else:
-            print('❌ Cliente MQTT não conectado')
+
+    def is_connected(self):
+        return self._connected
