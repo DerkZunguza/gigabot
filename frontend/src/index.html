@@ -11,7 +11,7 @@
   <nav class="navbar">
     <div class="nav-brand">Bot MB Venda</div>
     <div class="nav-right">
-      <span id="nav-wa" class="badge badge-gray">WhatsApp: --</span>
+      <span id="nav-wa"   class="badge badge-gray">WhatsApp: --</span>
       <span id="nav-mqtt" class="badge badge-gray">MQTT: --</span>
     </div>
   </nav>
@@ -21,8 +21,7 @@
     <!-- WHATSAPP -->
     <section class="card">
       <div class="card-header">
-        <h2>WhatsApp</h2>
-        <button id="connect-btn" class="btn btn-primary btn-sm">Conectar / Novo QR</button>
+        <h2>Conexao WhatsApp</h2>
       </div>
 
       <div id="status-bar" class="status-bar disconnected">
@@ -30,22 +29,39 @@
         <span id="status-text">A verificar...</span>
       </div>
 
+      <!-- QR Code -->
       <div id="qr-section" class="qr-section hidden">
-        <p class="qr-hint">Abra o WhatsApp no telemovel &rarr; Aparelhos conectados &rarr; Conectar um aparelho &rarr; Aponte a camara para o codigo abaixo</p>
+        <p class="info-box">Abra o WhatsApp &rarr; Aparelhos conectados &rarr; Conectar um aparelho &rarr; Aponte a camara para o codigo abaixo</p>
         <div class="qr-box">
           <img id="qr-image" src="" alt="QR Code">
         </div>
       </div>
 
-      <div id="connected-info" class="connected-info hidden">
-        <p>WhatsApp esta conectado. O bot esta a receber mensagens.</p>
+      <!-- Pairing Code -->
+      <div id="pairing-section" class="pairing-section hidden">
+        <p class="info-box">Abra o WhatsApp &rarr; Aparelhos conectados &rarr; Ligar com numero de telefone &rarr; Introduza o codigo abaixo</p>
+        <div class="pairing-code" id="pairing-code">----</div>
+      </div>
+
+      <!-- Conectado -->
+      <div id="connected-info" class="info-box info-green hidden">
+        WhatsApp conectado. O bot esta a receber mensagens.
+      </div>
+
+      <!-- Acoes -->
+      <div class="connect-actions">
+        <div class="input-group">
+          <input type="text" id="phone-input" placeholder="Numero com codigo do pais: 258841234567">
+          <button id="pair-btn" class="btn btn-primary">Ligar com numero</button>
+        </div>
+        <button id="qr-btn" class="btn btn-secondary">Gerar QR Code</button>
       </div>
     </section>
 
     <!-- HARDWARE -->
     <section class="card">
       <div class="card-header">
-        <h2>Estado dos Hardware</h2>
+        <h2>Estado dos Sistemas</h2>
         <button id="hw-refresh" class="btn btn-secondary btn-sm">Actualizar</button>
       </div>
       <div class="hw-grid">
@@ -63,7 +79,7 @@
         </div>
         <div class="hw-item">
           <div class="hw-label">MongoDB</div>
-          <div id="hw-mongo" class="hw-status">Ligado</div>
+          <div id="hw-mongo" class="hw-status ok">Ligado</div>
         </div>
       </div>
     </section>

@@ -1,7 +1,7 @@
 {
   "name": "whatsapp-mb-bot",
   "version": "1.0.0",
-  "description": "Bot WhatsApp para venda de pacotes MB - Vodacom Moçambique",
+  "description": "Bot WhatsApp para venda de pacotes MB - Vodacom Mocambique",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
@@ -16,6 +16,7 @@
     "mongoose": "^8.0.0",
     "mqtt": "^5.3.0",
     "dotenv": "^16.3.1",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "node-telegram-bot-api": "^0.66.0"
   }
 }

@@ -4,7 +4,8 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const whatsapp = require('./whatsapp');
-const mqtt = require('./mqtt');
+const mqtt     = require('./mqtt');
+const telegram = require('./telegram');
 const Cliente = require('./models/cliente');
 const Pedido = require('./models/pedido');
 const Pacote = require('./models/pacote');
@@ -198,6 +199,18 @@ app.patch('/api/pedidos/:pedidoId', async (req, res) => {
   }
 });
 
+// Conectar WhatsApp com numero de telefone (pairing code)
+app.post('/api/pair', async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ error: 'Numero de telefone obrigatorio' });
+  try {
+    await whatsapp.restart(phone);
+    res.json({ success: true, message: 'A gerar codigo de pareamento...' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ==================== HARDWARE STATUS ====================
 
 app.get('/api/hardware', (req, res) => {
@@ -240,6 +253,7 @@ app.get('/api/pedidos/stats', async (req, res) => {
 async function start() {
   await whatsapp.startWhatsApp();
   mqtt.connectMQTT();
+  telegram.init();
 
   // Limpar pedidos expirados a cada 5 minutos
   const { limparPedidosExpirados } = require('./menu');
