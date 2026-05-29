@@ -48,12 +48,12 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://mongo:27017/mb_bot').then
 // ==================== API ROUTES ====================
 
 // Status
-app.get('/api/status', auth, (req, res) => {
+app.get('/api/status', (req, res) => {
   res.json(whatsapp.getStatus());
 });
 
 // Restart
-app.post('/api/restart', auth, async (req, res) => {
+app.post('/api/restart', async (req, res) => {
   try {
     await whatsapp.restart();
     res.json({ success: true, message: 'Reiniciando conexão...' });
@@ -63,7 +63,7 @@ app.post('/api/restart', auth, async (req, res) => {
 });
 
 // QR Callback
-app.post('/api/qr-callback', auth, (req, res) => {
+app.post('/api/qr-callback', (req, res) => {
   const { callbackUrl } = req.body;
   if (callbackUrl) {
     whatsapp.setQRCallback((qrCode) => {
@@ -80,7 +80,7 @@ app.post('/api/qr-callback', auth, (req, res) => {
 // ==================== CLIENTES ====================
 
 // Listar todos os clientes
-app.get('/api/clientes', auth, async (req, res) => {
+app.get('/api/clientes', async (req, res) => {
   try {
     const clientes = await Cliente.find().select('-historico');
     res.json({ success: true, data: clientes });
@@ -90,7 +90,7 @@ app.get('/api/clientes', auth, async (req, res) => {
 });
 
 // Obter cliente por WhatsApp
-app.get('/api/clientes/:whatsapp', auth, async (req, res) => {
+app.get('/api/clientes/:whatsapp', async (req, res) => {
   try {
     const cliente = await Cliente.findOne({ whatsapp: req.params.whatsapp });
     if (!cliente) {
@@ -103,7 +103,7 @@ app.get('/api/clientes/:whatsapp', auth, async (req, res) => {
 });
 
 // Criar novo cliente
-app.post('/api/clientes', auth, async (req, res) => {
+app.post('/api/clientes', async (req, res) => {
   try {
     const { whatsapp, nome } = req.body;
     let cliente = await Cliente.findOne({ whatsapp });
@@ -123,7 +123,7 @@ app.post('/api/clientes', auth, async (req, res) => {
 // ==================== PACOTES ====================
 
 // Listar pacotes por categoria
-app.get('/api/pacotes/:categoria', auth, async (req, res) => {
+app.get('/api/pacotes/:categoria', async (req, res) => {
   try {
     const { categoria } = req.params;
     const pacotes = await Pacote.find({ tipo: categoria, ativo: true });
@@ -136,7 +136,7 @@ app.get('/api/pacotes/:categoria', auth, async (req, res) => {
 // ==================== PEDIDOS ====================
 
 // Listar pedidos de um cliente
-app.get('/api/clientes/:clienteId/pedidos', auth, async (req, res) => {
+app.get('/api/clientes/:clienteId/pedidos', async (req, res) => {
   try {
     const pedidos = await Pedido.find({ clienteId: req.params.clienteId })
       .sort({ createdAt: -1 });
@@ -147,7 +147,7 @@ app.get('/api/clientes/:clienteId/pedidos', auth, async (req, res) => {
 });
 
 // Obter pedido por ID
-app.get('/api/pedidos/:pedidoId', auth, async (req, res) => {
+app.get('/api/pedidos/:pedidoId', async (req, res) => {
   try {
     const pedido = await Pedido.findById(req.params.pedidoId);
     if (!pedido) {
@@ -160,7 +160,7 @@ app.get('/api/pedidos/:pedidoId', auth, async (req, res) => {
 });
 
 // Criar novo pedido
-app.post('/api/pedidos', auth, async (req, res) => {
+app.post('/api/pedidos', async (req, res) => {
   try {
     const { clienteId, pacote, metodoPagamento } = req.body;
     
@@ -182,7 +182,7 @@ app.post('/api/pedidos', auth, async (req, res) => {
 });
 
 // Atualizar status de pedido
-app.patch('/api/pedidos/:pedidoId', auth, async (req, res) => {
+app.patch('/api/pedidos/:pedidoId', async (req, res) => {
   try {
     const { status, referencia, dataPagamento, dataActivacao } = req.body;
     
@@ -200,7 +200,7 @@ app.patch('/api/pedidos/:pedidoId', auth, async (req, res) => {
 
 // ==================== DASHBOARD ENDPOINTS ====================
 
-app.get('/api/pedidos/recentes', auth, async (req, res) => {
+app.get('/api/pedidos/recentes', async (req, res) => {
   try {
     const pedidos = await Pedido.find().sort({ createdAt: -1 }).limit(50);
     res.json({ success: true, data: pedidos });
@@ -209,7 +209,7 @@ app.get('/api/pedidos/recentes', auth, async (req, res) => {
   }
 });
 
-app.get('/api/pedidos/stats', auth, async (req, res) => {
+app.get('/api/pedidos/stats', async (req, res) => {
   try {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const [total, pendentes, hojeCount, clientes] = await Promise.all([

@@ -6,16 +6,11 @@ function getToken() { return localStorage.getItem('mb_token'); }
 function setToken(t) { localStorage.setItem('mb_token', t); }
 function clearToken() { localStorage.removeItem('mb_token'); }
 
-function authHeaders() {
-  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` };
-}
-
 async function api(path, options = {}) {
   const res = await fetch(API + path, {
     ...options,
-    headers: { ...authHeaders(), ...(options.headers || {}) }
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
   });
-  if (res.status === 401) { logout(); return null; }
   return res.json().catch(() => null);
 }
 
@@ -160,8 +155,5 @@ function startPolling() {
 
 // ── INIT ──────────────────────────────────────────────
 
-if (getToken()) {
-  showDashboard();
-} else {
-  loginScreen.classList.remove('hidden');
-}
+// Autenticação desactivada temporariamente — vai directo ao dashboard
+showDashboard();
