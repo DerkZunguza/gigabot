@@ -122,7 +122,12 @@ function publish(topic, message) {
   }
 }
 
+function isConnected() {
+  return !!(client && client.connected);
+}
+
 module.exports = {
   connectMQTT,
-  publish
+  publish,
+  isConnected
 };

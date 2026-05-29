@@ -8,99 +8,112 @@
 </head>
 <body>
 
-  <!-- LOGIN -->
-  <div id="login-screen" class="login-screen">
-    <div class="login-card">
-      <div class="login-logo">🤖</div>
-      <h1>Bot MB Venda</h1>
-      <p>Acesso restrito</p>
-      <form id="login-form">
-        <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
-        <button type="submit" class="btn btn-primary btn-full">Entrar</button>
-        <p id="login-error" class="error-msg hidden">Password incorrecta</p>
-      </form>
+  <nav class="navbar">
+    <div class="nav-brand">Bot MB Venda</div>
+    <div class="nav-right">
+      <span id="nav-wa" class="badge badge-gray">WhatsApp: --</span>
+      <span id="nav-mqtt" class="badge badge-gray">MQTT: --</span>
     </div>
-  </div>
+  </nav>
 
-  <!-- DASHBOARD -->
-  <div id="dashboard" class="hidden">
-    <nav class="navbar">
-      <div class="nav-brand">🤖 Bot MB</div>
-      <div class="nav-right">
-        <span id="nav-status" class="nav-badge disconnected">Desconectado</span>
-        <button id="logout-btn" class="btn-icon" title="Sair">⏻</button>
+  <main class="main">
+
+    <!-- WHATSAPP -->
+    <section class="card">
+      <div class="card-header">
+        <h2>WhatsApp</h2>
+        <button id="connect-btn" class="btn btn-primary btn-sm">Conectar / Novo QR</button>
       </div>
-    </nav>
 
-    <main class="main">
+      <div id="status-bar" class="status-bar disconnected">
+        <span class="status-dot"></span>
+        <span id="status-text">A verificar...</span>
+      </div>
 
-      <!-- STATUS + QR -->
-      <section class="card" id="connection-card">
-        <div class="card-header">
-          <h2>Conexão WhatsApp</h2>
-          <button id="restart-btn" class="btn btn-sm btn-secondary">🔄 Reiniciar</button>
-        </div>
-
-        <div id="status-bar" class="status-bar disconnected">
-          <span class="status-dot"></span>
-          <span id="status-text">A verificar...</span>
-        </div>
-
-        <div id="qr-section" class="qr-section hidden">
-          <p class="qr-hint">📱 Abra o WhatsApp → Aparelhos conectados → Conectar um aparelho</p>
-          <div class="qr-box">
-            <img id="qr-image" src="" alt="QR Code WhatsApp">
-          </div>
-        </div>
-      </section>
-
-      <!-- STATS -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="stat-hoje">—</div>
-          <div class="stat-label">Vendas hoje</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-total">—</div>
-          <div class="stat-label">Total pedidos</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-pendentes">—</div>
-          <div class="stat-label">Pendentes</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-clientes">—</div>
-          <div class="stat-label">Clientes</div>
+      <div id="qr-section" class="qr-section hidden">
+        <p class="qr-hint">Abra o WhatsApp no telemovel &rarr; Aparelhos conectados &rarr; Conectar um aparelho &rarr; Aponte a camara para o codigo abaixo</p>
+        <div class="qr-box">
+          <img id="qr-image" src="" alt="QR Code">
         </div>
       </div>
 
-      <!-- PEDIDOS RECENTES -->
-      <section class="card">
-        <div class="card-header">
-          <h2>Pedidos Recentes</h2>
-          <button id="refresh-btn" class="btn btn-sm btn-secondary">↻ Actualizar</button>
-        </div>
-        <div class="table-wrap">
-          <table id="pedidos-table">
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Pacote</th>
-                <th>Valor</th>
-                <th>Método</th>
-                <th>Estado</th>
-                <th>Data</th>
-              </tr>
-            </thead>
-            <tbody id="pedidos-body">
-              <tr><td colspan="6" class="empty">A carregar...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div id="connected-info" class="connected-info hidden">
+        <p>WhatsApp esta conectado. O bot esta a receber mensagens.</p>
+      </div>
+    </section>
 
-    </main>
-  </div>
+    <!-- HARDWARE -->
+    <section class="card">
+      <div class="card-header">
+        <h2>Estado dos Hardware</h2>
+        <button id="hw-refresh" class="btn btn-secondary btn-sm">Actualizar</button>
+      </div>
+      <div class="hw-grid">
+        <div class="hw-item">
+          <div class="hw-label">Broker MQTT</div>
+          <div id="hw-mqtt" class="hw-status">--</div>
+        </div>
+        <div class="hw-item">
+          <div class="hw-label">Arduino / SIM900</div>
+          <div id="hw-arduino" class="hw-status">--</div>
+        </div>
+        <div class="hw-item">
+          <div class="hw-label">WhatsApp</div>
+          <div id="hw-whatsapp" class="hw-status">--</div>
+        </div>
+        <div class="hw-item">
+          <div class="hw-label">MongoDB</div>
+          <div id="hw-mongo" class="hw-status">Ligado</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-hoje">--</div>
+        <div class="stat-label">Vendas hoje</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-total">--</div>
+        <div class="stat-label">Total pedidos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-pendentes">--</div>
+        <div class="stat-label">Pendentes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-clientes">--</div>
+        <div class="stat-label">Clientes</div>
+      </div>
+    </div>
+
+    <!-- PEDIDOS -->
+    <section class="card">
+      <div class="card-header">
+        <h2>Pedidos Recentes</h2>
+        <button id="refresh-btn" class="btn btn-secondary btn-sm">Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Numero</th>
+              <th>Pacote</th>
+              <th>Valor</th>
+              <th>Metodo</th>
+              <th>Estado</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody id="pedidos-body">
+            <tr><td colspan="6" class="empty">A carregar...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
 
   <script src="script.js"></script>
 </body>

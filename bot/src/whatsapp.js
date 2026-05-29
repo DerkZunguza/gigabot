@@ -114,9 +114,17 @@ function setQRCallback(callback) {
 
 async function restart() {
   if (sock) {
-    await sock.logout();
+    try { await sock.logout(); } catch (_) {}
+    sock = null;
   }
-  startWhatsApp();
+  // Apagar sessao guardada para forcar novo QR code
+  const authPath = path.join(process.cwd(), 'auth_info_baileys');
+  if (fs.existsSync(authPath)) {
+    fs.rmSync(authPath, { recursive: true, force: true });
+  }
+  connectionStatus = 'disconnected';
+  qrCode = null;
+  await startWhatsApp();
 }
 
 module.exports = {

@@ -198,6 +198,17 @@ app.patch('/api/pedidos/:pedidoId', async (req, res) => {
   }
 });
 
+// ==================== HARDWARE STATUS ====================
+
+app.get('/api/hardware', (req, res) => {
+  const fs = require('fs');
+  res.json({
+    whatsapp: whatsapp.getStatus().status,
+    mqtt: mqtt.isConnected() ? 'connected' : 'disconnected',
+    arduino: fs.existsSync('/dev/ttyUSB0') ? 'connected' : 'disconnected'
+  });
+});
+
 // ==================== DASHBOARD ENDPOINTS ====================
 
 app.get('/api/pedidos/recentes', async (req, res) => {
