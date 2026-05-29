@@ -16,6 +16,88 @@ const sections  = document.querySelectorAll('.section');
 const navLinks  = document.querySelectorAll('.nav-link');
 const pageTitle = document.getElementById('page-title');
 
+// ── AT CONSOLE ───────────────────────────────────────────
+
+function atAppend(text, cls) {
+  const term = document.getElementById('at-terminal');
+  const line = document.createElement('div');
+  line.className = `at-line ${cls}`;
+  line.textContent = text;
+  term.appendChild(line);
+  term.scrollTop = term.scrollHeight;
+}
+
+async function enviarAT(cmd) {
+  atAppend(`> ${cmd}`, 'cmd');
+  const data = await api('/at', { method: 'POST', body: JSON.stringify({ comando: cmd }) });
+  if (!data) { atAppend('Erro de ligacao', 'err'); return; }
+  if (!data.success) { atAppend(data.error || 'Erro', 'err'); return; }
+  const resp = (data.resposta || '').trim();
+  if (resp) atAppend(resp, 'resp');
+  else      atAppend('(sem resposta)', 'info');
+}
+
+document.getElementById('at-send').addEventListener('click', () => {
+  const inp = document.getElementById('at-input');
+  const cmd = inp.value.trim();
+  if (!cmd) return;
+  enviarAT(cmd);
+  inp.value = '';
+  inp.focus();
+});
+
+document.getElementById('at-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('at-send').click();
+});
+
+document.getElementById('at-clear').addEventListener('click', () => {
+  document.getElementById('at-terminal').innerHTML = '';
+});
+
+document.querySelectorAll('.at-quick').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('at-input').value = btn.dataset.cmd;
+    document.getElementById('at-send').click();
+  });
+});
+
+// ── ENVIAR MSG WHATSAPP ───────────────────────────────────
+
+document.getElementById('send-wa-btn').addEventListener('click', async () => {
+  const numero   = document.getElementById('send-numero').value.trim();
+  const mensagem = document.getElementById('send-msg').value.trim();
+  const statusEl = document.getElementById('send-wa-status');
+  const btn      = document.getElementById('send-wa-btn');
+
+  if (!numero || !mensagem) {
+    statusEl.className = 'alert alert-yellow';
+    statusEl.textContent = 'Preenche o numero e a mensagem.';
+    statusEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'A enviar...';
+
+  const data = await api('/whatsapp/send', {
+    method: 'POST',
+    body: JSON.stringify({ numero, mensagem })
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Enviar Mensagem';
+  statusEl.classList.remove('hidden');
+
+  if (data?.success) {
+    statusEl.className = 'alert alert-green';
+    statusEl.textContent = `Mensagem enviada para ${numero}`;
+    document.getElementById('send-msg').value = '';
+  } else {
+    statusEl.className = 'alert alert-yellow';
+    statusEl.textContent = data?.error || 'Erro ao enviar. WhatsApp esta conectado?';
+  }
+});
+
 // ── SMS ───────────────────────────────────────────────
 
 async function loadSMS() {
@@ -102,6 +184,8 @@ document.querySelectorAll('.ussd-quick').forEach(el => {
 });
 
 const TITLES = {
+  at:        'Console AT — SIM900',
+  send:      'Enviar Mensagem WhatsApp',
   dashboard: 'Visao Geral',
   whatsapp:  'WhatsApp',
   telegram:  'Telegram',
@@ -125,6 +209,9 @@ navLinks.forEach(link => {
     document.querySelector('.sidebar').classList.remove('open');
     if (sec === 'pedidos')  loadAllPedidos();
     if (sec === 'sms')      loadSMS();
+    if (sec === 'at') {
+      atAppend('Console AT pronto. Arduino: ' + (document.getElementById('hw-arduino')?.textContent || '--'), 'info');
+    }
     if (sec === 'logs')     loadLogs();
     if (sec === 'settings') loadConfig();
   });

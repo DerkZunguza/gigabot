@@ -93,8 +93,15 @@ void processarComando(String cmd) {
   } else if (cmd == "SMS_CHECK") {
     verificarSMSNovos();
 
+  } else if (cmd.startsWith("AT_CMD:")) {
+    // AT command com resposta devolvida ao Python
+    String atCmd = cmd.substring(7);
+    atCmd.trim();
+    String resposta = enviarATComResposta(atCmd);
+    Serial.println("AT_RESP|" + resposta);
+
   } else {
-    // Passagem directa de AT command (para debug)
+    // Passagem directa (sem resposta formatada)
     sim900.println(cmd);
   }
 }
@@ -176,31 +183,48 @@ void processarRespostaSIM900(String linha) {
 // ── USSD ──────────────────────────────────────────────
 
 String executarUSSD(String codigo) {
-  // Limpar buffer
   while (sim900.available()) sim900.read();
 
   sim900.println("AT+CUSD=1,\"" + codigo + "\",15");
-  delay(8000); // USSD pode demorar ate 8s
 
-  String resp = "";
+  // Aguardar +CUSD: (ate 20 segundos)
+  String resp    = "";
+  bool recebido  = false;
   unsigned long t = millis();
-  while (millis() - t < 5000) {
+
+  while (millis() - t < 20000) {
     while (sim900.available()) resp += (char)sim900.read();
-    if (resp.indexOf("+CUSD:") >= 0) break;
-    delay(100);
-  }
 
-  // Extrair texto da resposta: +CUSD: 0,"texto",15
-  int inicio = resp.indexOf("+CUSD:");
-  if (inicio >= 0) {
-    int q1 = resp.indexOf("\"", inicio) + 1;
-    int q2 = resp.indexOf("\"", q1);
-    if (q1 > 0 && q2 > q1) {
-      return resp.substring(q1, q2);
+    if (!recebido && resp.indexOf("+CUSD:") >= 0) {
+      recebido = true;
+      // Aguardar 3 segundos para a resposta multi-linha terminar
+      unsigned long t2 = millis();
+      while (millis() - t2 < 3000) {
+        while (sim900.available()) resp += (char)sim900.read();
+      }
+      break;
     }
+    delay(200);
   }
 
-  return resp.length() > 0 ? resp : "SEM_RESPOSTA";
+  if (!recebido) return "SEM_RESPOSTA";
+
+  // Extrair texto: +CUSD: n,"conteudo multi-linha",n
+  // Usa lastIndexOf para encontrar o fecho correcto
+  int cusdPos = resp.indexOf("+CUSD:");
+  if (cusdPos < 0) return resp;
+
+  int q1 = resp.indexOf("\"", cusdPos) + 1;
+  int q2 = resp.lastIndexOf("\","); // ultimo ", que fecha o conteudo
+
+  if (q1 > 0 && q2 > q1) {
+    String texto = resp.substring(q1, q2);
+    texto.trim();
+    texto.replace("\r", "");
+    return texto;
+  }
+
+  return resp;
 }
 
 // ── UTILIDADES ────────────────────────────────────────
@@ -214,6 +238,29 @@ String enviarAT(String cmd) {
   while (millis() - t < 300) {
     while (sim900.available()) resp += (char)sim900.read();
   }
+  return resp;
+}
+
+String enviarATComResposta(String cmd) {
+  while (sim900.available()) sim900.read();
+  sim900.println(cmd);
+  delay(500);
+  String resp = "";
+  unsigned long t = millis();
+  while (millis() - t < 2000) {
+    while (sim900.available()) resp += (char)sim900.read();
+    if (resp.indexOf("OK") >= 0 || resp.indexOf("ERROR") >= 0) {
+      delay(100);
+      while (sim900.available()) resp += (char)sim900.read();
+      break;
+    }
+    delay(50);
+  }
+  resp.trim();
+  resp.replace("\r\n", " | ");
+  resp.replace("\r", "");
+  resp.replace("\n", " | ");
+  if (resp.length() == 0) resp = "SEM_RESPOSTA";
   return resp;
 }
 

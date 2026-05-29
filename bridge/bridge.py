@@ -62,6 +62,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
         print(f'[MQTT] Conectado a {MQTT_HOST}')
         client.subscribe('mb/activar')
         client.subscribe('ussd/executar')
+        client.subscribe('at/executar')
     else:
         print(f'[MQTT] Falhou reason={reason_code}')
 
@@ -82,9 +83,20 @@ def on_message(client, userdata, msg):
             if codigo:
                 print(f'[MQTT] USSD manual: {codigo}')
                 enviar_serial(f'USSD:{codigo}')
-                # Aguardar resposta e publicar resultado
                 threading.Thread(
                     target=aguardar_e_publicar_ussd,
+                    args=(request_id,),
+                    daemon=True
+                ).start()
+
+        elif msg.topic == 'at/executar':
+            comando    = data.get('comando', '')
+            request_id = data.get('requestId', '')
+            if comando:
+                print(f'[MQTT] AT manual: {comando}')
+                enviar_serial(f'AT_CMD:{comando}')
+                threading.Thread(
+                    target=aguardar_e_publicar_at,
                     args=(request_id,),
                     daemon=True
                 ).start()
@@ -92,7 +104,20 @@ def on_message(client, userdata, msg):
     except Exception as e:
         print(f'[MQTT] Erro msg: {e}')
 
-def aguardar_e_publicar_ussd(request_id, timeout=15):
+at_resp_buffer = []
+
+def aguardar_e_publicar_at(request_id, timeout=5):
+    t = time.time()
+    while time.time() - t < timeout:
+        if at_resp_buffer:
+            resp = at_resp_buffer.pop(0)
+            publicar('at/resultado', {'requestId': request_id, 'resposta': resp})
+            print(f'[AT] Resultado publicado: {resp[:80]}')
+            return
+        time.sleep(0.2)
+    publicar('at/resultado', {'requestId': request_id, 'resposta': 'TIMEOUT'})
+
+def aguardar_e_publicar_ussd(request_id, timeout=25):
     t = time.time()
     while time.time() - t < timeout:
         if ussd_resp_buffer:
@@ -151,6 +176,10 @@ def loop_serial():
                             'timestamp': int(time.time() * 1000)
                         })
                         print(f'[SMS] De {partes[1]}: {partes[2][:50]}')
+
+                elif linha.startswith('AT_RESP|'):
+                    resp = linha.split('|', 1)[1] if '|' in linha else ''
+                    at_resp_buffer.append(resp)
 
                 elif linha.startswith('USSD_RESP|'):
                     resp = linha.split('|', 1)[1] if '|' in linha else linha

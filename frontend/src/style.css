@@ -565,6 +565,57 @@ tr:hover td { background: var(--surface2); }
 .about-row span:first-child { color: var(--muted); }
 .about-row span:last-child  { font-weight: 500; }
 
+/* ── AT TERMINAL ─────────────────────────────────────── */
+
+.at-terminal {
+  background: #0a0d18;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: .82rem;
+  min-height: 220px;
+  max-height: 380px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  color: #c9d1e9;
+  line-height: 1.6;
+}
+
+.at-line { margin-bottom: 2px; }
+.at-line.cmd  { color: var(--accent); }
+.at-line.resp { color: #a8e6b0; }
+.at-line.err  { color: var(--red); }
+.at-line.info { color: var(--muted); font-style: italic; }
+
+.at-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.at-prompt { color: var(--accent); font-family: monospace; font-weight: 700; flex-shrink: 0; }
+.at-input-row input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  font-size: .88rem;
+  outline: none;
+}
+
+.field-label {
+  display: block;
+  font-size: .78rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
 /* ── USSD ─────────────────────────────────────── */
 
 .ussd-form {

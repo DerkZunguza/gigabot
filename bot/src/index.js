@@ -280,6 +280,36 @@ app.delete('/api/sms', async (req, res) => {
   }
 });
 
+// ==================== ENVIAR MSG WHATSAPP ====================
+
+app.post('/api/whatsapp/send', async (req, res) => {
+  const { numero, mensagem } = req.body;
+  if (!numero || !mensagem) return res.status(400).json({ error: 'Numero e mensagem obrigatorios' });
+  try {
+    const jid = numero.replace(/\D/g, '') + '@s.whatsapp.net';
+    await whatsapp.sendMessage(jid, mensagem);
+    logger.info(`Mensagem enviada para ${numero}`);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ==================== AT COMMAND ====================
+
+app.post('/api/at', async (req, res) => {
+  const { comando } = req.body;
+  if (!comando) return res.status(400).json({ error: 'Comando AT obrigatorio' });
+  if (!mqtt.isConnected()) return res.status(503).json({ error: 'MQTT nao conectado' });
+  try {
+    const resposta = await mqtt.executarAT(comando);
+    logger.info(`AT ${comando} => ${resposta}`);
+    res.json({ success: true, comando, resposta });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // ==================== USSD MANUAL ====================
 
 app.post('/api/ussd', async (req, res) => {

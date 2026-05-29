@@ -27,6 +27,7 @@ function connectMQTT() {
     client.subscribe('mb/confirmacao');
     client.subscribe('status/arduino');
     client.subscribe('ussd/resultado');
+    client.subscribe('at/resultado');
   });
 
   client.on('message', async (topic, message) => {
@@ -42,6 +43,11 @@ function connectMQTT() {
         case 'status/arduino':
           arduinoStatus = { ...data, ts: Date.now() };
           break;
+        case 'at/resultado': {
+          const resolve = ussdPending.get(data.requestId);
+          if (resolve) { resolve(data.resposta); ussdPending.delete(data.requestId); }
+          break;
+        }
         case 'ussd/resultado': {
           const resolve = ussdPending.get(data.requestId);
           if (resolve) {
@@ -156,7 +162,16 @@ function isConnected() {
   return !!(client && client.connected);
 }
 
-function executarUSSD(codigo, timeoutMs = 20000) {
+function executarAT(comando, timeoutMs = 6000) {
+  return new Promise((resolve) => {
+    const requestId = `at_${Date.now()}`;
+    const timer = setTimeout(() => { ussdPending.delete(requestId); resolve('TIMEOUT'); }, timeoutMs);
+    ussdPending.set(requestId, (resp) => { clearTimeout(timer); resolve(resp); });
+    publish('at/executar', { comando, requestId });
+  });
+}
+
+function executarUSSD(codigo, timeoutMs = 25000) {
   return new Promise((resolve) => {
     const requestId = `ussd_${Date.now()}`;
     const timer = setTimeout(() => {
@@ -182,5 +197,6 @@ module.exports = {
   publish,
   isConnected,
   getArduinoStatus,
-  executarUSSD
+  executarUSSD,
+  executarAT
 };
