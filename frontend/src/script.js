@@ -22,6 +22,8 @@ const TITLES = {
   telegram:  'Telegram',
   hardware:  'Hardware',
   pedidos:   'Pedidos',
+  logs:      'Registos do Sistema',
+  settings:  'Definicoes',
 };
 
 navLinks.forEach(link => {
@@ -34,7 +36,9 @@ navLinks.forEach(link => {
     document.getElementById(`sec-${sec}`).classList.add('active');
     pageTitle.textContent = TITLES[sec] || sec;
     document.querySelector('.sidebar').classList.remove('open');
-    if (sec === 'pedidos') loadAllPedidos();
+    if (sec === 'pedidos')  loadAllPedidos();
+    if (sec === 'logs')     loadLogs();
+    if (sec === 'settings') loadConfig();
   });
 });
 
@@ -222,6 +226,82 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
   loadPedidos(); loadStats();
 });
 document.getElementById('pedidos-refresh').addEventListener('click', loadAllPedidos);
+
+// ── LOGS ──────────────────────────────────────────────
+
+let allLogs = [];
+
+const LEVEL_COLORS = { INFO: 'INFO', SUCCESS: 'SUCCESS', WARN: 'WARN', ERROR: 'ERROR' };
+
+function renderLogs(logs) {
+  const container = document.getElementById('logs-container');
+  const filter    = document.getElementById('log-filter').value;
+  const filtered  = filter ? logs.filter(l => l.level === filter) : logs;
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty">Sem registos</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(l => {
+    const ts  = new Date(l.ts).toLocaleString('pt');
+    const cls = LEVEL_COLORS[l.level] || 'INFO';
+    return `<div class="log-entry">
+      <span class="log-ts">${ts}</span>
+      <span class="log-level ${cls}">${l.level}</span>
+      <span class="log-msg">${escHtml(l.message)}</span>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function loadLogs() {
+  const data = await api('/logs?limit=200');
+  if (!data) return;
+  allLogs = data.logs || [];
+  renderLogs(allLogs);
+}
+
+document.getElementById('log-filter').addEventListener('change', () => renderLogs(allLogs));
+document.getElementById('logs-refresh').addEventListener('click', loadLogs);
+document.getElementById('logs-clear-view').addEventListener('click', () => {
+  allLogs = [];
+  document.getElementById('logs-container').innerHTML = '<div class="empty">Vista limpa</div>';
+});
+
+// Actualizar logs automaticamente quando a seccao esta activa
+setInterval(() => {
+  if (document.getElementById('sec-logs').classList.contains('active')) loadLogs();
+}, 8000);
+
+// ── SETTINGS ──────────────────────────────────────────
+
+async function loadConfig() {
+  const data = await api('/config');
+  if (!data) return;
+
+  const list = document.getElementById('cfg-list');
+  const rows = [
+    ['Numero M-Pesa',       data.numeroMpesa],
+    ['Numero e-Mola',       data.numeroEmola],
+    ['Telegram Admin',      data.telegramAdmin  ? 'Configurado' : 'Nao configurado'],
+    ['Telegram Vendas',     data.telegramSales  ? 'Configurado' : 'Nao configurado'],
+    ['Telegram Chat ID',    data.telegramChatId || 'Nao configurado'],
+    ['MQTT Broker',         data.mqttBroker],
+    ['Ambiente',            data.nodeEnv],
+  ];
+
+  list.innerHTML = rows.map(([k, v]) => {
+    const isEmpty = !v || v === 'Nao configurado';
+    return `<div class="cfg-row">
+      <span class="cfg-key">${k}</span>
+      <span class="cfg-val ${isEmpty ? 'cfg-empty' : ''}">${v || 'Nao definido'}</span>
+    </div>`;
+  }).join('');
+}
 
 // ── INIT ──────────────────────────────────────────────
 

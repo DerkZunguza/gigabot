@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const pedidoSchema = new mongoose.Schema({
   clienteId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Cliente',
-    required: true
+    ref: 'Cliente'
   },
   cliente: {
     whatsapp: String,

@@ -1,4 +1,6 @@
 require('dotenv').config();
+// Polyfill WebCrypto para Node.js 18 (necessario para Baileys pairing code)
+if (!globalThis.crypto) globalThis.crypto = require('crypto').webcrypto;
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -7,6 +9,8 @@ const whatsapp = require('./whatsapp');
 const mqtt     = require('./mqtt');
 const telegram      = require('./telegram');
 const telegramSales = require('./telegram-sales');
+const logger        = require('./logger');
+const monitor       = require('./monitor');
 const Cliente = require('./models/cliente');
 const Pedido = require('./models/pedido');
 const Pacote = require('./models/pacote');
@@ -251,22 +255,50 @@ app.get('/api/pedidos/stats', async (req, res) => {
   }
 });
 
+// ==================== LOGS ====================
+
+app.get('/api/logs', (req, res) => {
+  const limit = parseInt(req.query.limit) || 100;
+  res.json({ logs: logger.getLogs(limit) });
+});
+
+// ==================== CONFIG ====================
+
+app.get('/api/config', (req, res) => {
+  res.json({
+    numeroMpesa:        process.env.NUMERO_MPESA || '',
+    numeroEmola:        process.env.NUMERO_EMOLA || '',
+    telegramAdmin:      !!process.env.TELEGRAM_TOKEN,
+    telegramSales:      !!process.env.TELEGRAM_SALES_TOKEN,
+    telegramChatId:     process.env.TELEGRAM_CHAT_ID ? '****' + process.env.TELEGRAM_CHAT_ID.slice(-3) : '',
+    mqttBroker:         process.env.MQTT_BROKER || 'mosquitto',
+    nodeEnv:            process.env.NODE_ENV || 'production',
+  });
+});
+
 // ==================== INICIAR SERVIÇOS ====================
 
 async function start() {
+  logger.info('A iniciar servicos...');
+
   await whatsapp.startWhatsApp();
+  logger.success('WhatsApp iniciado');
+
   mqtt.connectMQTT();
+  logger.success('MQTT conectado');
+
   telegram.init();
   telegramSales.initSales();
+  logger.success('Bots Telegram iniciados');
 
-  // Limpar pedidos expirados a cada 5 minutos
+  monitor.start();
+
   const { limparPedidosExpirados } = require('./menu');
   setInterval(limparPedidosExpirados, 5 * 60 * 1000);
 
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`📡 API disponível em http://localhost:${PORT}`);
+    logger.success(`Servidor a correr na porta ${PORT}`);
   });
 }
 
