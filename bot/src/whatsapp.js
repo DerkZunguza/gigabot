@@ -11,10 +11,12 @@ let qrCode = null;
 let pairingCode = null;
 let connectionStatus = 'disconnected';
 let qrCallback = null;
+let pendingPhone = null; // numero guardado para reconexoes durante pairing
 
 const AUTH_PATH = path.join(process.cwd(), 'auth_info_baileys');
 
 async function startWhatsApp(phoneNumber = null) {
+  if (phoneNumber) pendingPhone = phoneNumber;
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_PATH);
 
   sock = makeWASocket({
@@ -24,11 +26,12 @@ async function startWhatsApp(phoneNumber = null) {
     browser: ['Gigabot', 'Chrome', '120.0.0']
   });
 
-  // Pairing code (alternativa ao QR)
-  if (phoneNumber && !state.creds.registered) {
+  // Pairing code (alternativa ao QR) — usa pendingPhone se phoneNumber nao for passado
+  const phoneToUse = phoneNumber || pendingPhone;
+  if (phoneToUse && !state.creds.registered) {
     try {
       await new Promise(r => setTimeout(r, 2000));
-      const code = await sock.requestPairingCode(phoneNumber.replace(/\D/g, ''));
+      const code = await sock.requestPairingCode(phoneToUse.replace(/\D/g, ''));
       pairingCode = code;
       connectionStatus = 'pairing';
       console.log('Codigo de pareamento:', code);
@@ -69,6 +72,7 @@ async function startWhatsApp(phoneNumber = null) {
       connectionStatus = 'connected';
       qrCode = null;
       pairingCode = null;
+      pendingPhone = null; // ligado com sucesso, limpar numero pendente
       console.log('WhatsApp conectado');
       const telegram = require('./telegram');
       telegram.sendMessage('WhatsApp conectado com sucesso.');

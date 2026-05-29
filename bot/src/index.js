@@ -152,6 +152,31 @@ app.get('/api/clientes/:clienteId/pedidos', async (req, res) => {
   }
 });
 
+// Rotas estaticas TEM de vir antes de /:pedidoId para nao serem capturadas pelo parametro dinamico
+app.get('/api/pedidos/recentes', async (req, res) => {
+  try {
+    const pedidos = await Pedido.find().sort({ createdAt: -1 }).limit(50);
+    res.json({ success: true, data: pedidos });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/pedidos/stats', async (req, res) => {
+  try {
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const [total, pendentes, hojeCount, clientes] = await Promise.all([
+      Pedido.countDocuments(),
+      Pedido.countDocuments({ status: 'pendente' }),
+      Pedido.countDocuments({ createdAt: { $gte: hoje }, status: { $in: ['activado','pago'] } }),
+      Cliente.countDocuments()
+    ]);
+    res.json({ total, pendentes, hoje: hojeCount, clientes });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Obter pedido por ID
 app.get('/api/pedidos/:pedidoId', async (req, res) => {
   try {
@@ -227,32 +252,6 @@ app.get('/api/hardware', (req, res) => {
     telegram:      telegram.isActive()      ? 'connected' : 'disconnected',
     telegramSales: telegramSales.isActive() ? 'connected' : 'disconnected'
   });
-});
-
-// ==================== DASHBOARD ENDPOINTS ====================
-
-app.get('/api/pedidos/recentes', async (req, res) => {
-  try {
-    const pedidos = await Pedido.find().sort({ createdAt: -1 }).limit(50);
-    res.json({ success: true, data: pedidos });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.get('/api/pedidos/stats', async (req, res) => {
-  try {
-    const hoje = new Date(); hoje.setHours(0,0,0,0);
-    const [total, pendentes, hojeCount, clientes] = await Promise.all([
-      Pedido.countDocuments(),
-      Pedido.countDocuments({ status: 'pendente' }),
-      Pedido.countDocuments({ createdAt: { $gte: hoje }, status: { $in: ['activado','pago'] } }),
-      Cliente.countDocuments()
-    ]);
-    res.json({ total, pendentes, hoje: hojeCount, clientes });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
 });
 
 // ==================== LOGS ====================
