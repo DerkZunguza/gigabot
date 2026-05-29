@@ -37,8 +37,9 @@ services:
       ARDUINO_BAUD_RATE: 9600
     depends_on:
       - mosquitto
-    devices:
-      - /dev/ttyUSB0:/dev/ttyUSB0
+    # Descomentar quando o Arduino estiver ligado ao servidor:
+    # devices:
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
 
   mosquitto:
     image: eclipse-mosquitto:1.6
