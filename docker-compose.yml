@@ -11,8 +11,8 @@ services:
       MONGODB_URI: mongodb://mongo:27017/mb_bot
       MQTT_BROKER: mosquitto
       MQTT_PORT: 1883
-      MQTT_USERNAME: ${MQTT_USERNAME}
-      MQTT_PASSWORD: ${MQTT_PASSWORD}
+      NUMERO_MPESA: ${NUMERO_MPESA}
+      NUMERO_EMOLA: ${NUMERO_EMOLA}
     volumes:
       - auth-data:/app/auth_info_baileys
     depends_on:
@@ -28,26 +28,19 @@ services:
     environment:
       MQTT_BROKER: mosquitto
       MQTT_PORT: 1883
-      MQTT_USERNAME: ${MQTT_USERNAME}
-      MQTT_PASSWORD: ${MQTT_PASSWORD}
       ARDUINO_SERIAL_PORT: /dev/ttyUSB0
       ARDUINO_BAUD_RATE: 9600
     depends_on:
       - mosquitto
 
   mosquitto:
-    image: eclipse-mosquitto:2.0.14
+    image: eclipse-mosquitto:1.6
     container_name: mb-mosquitto
     restart: unless-stopped
     networks:
       - traefik-public
-    entrypoint: >
-      sh -c "mkdir -p /mosquitto/config &&
-      printf 'listener 1883\nallow_anonymous true\npersistence true\npersistence_location /mosquitto/data/\nlog_dest stdout\n' > /mosquitto/config/mosquitto.conf &&
-      mosquitto -c /mosquitto/config/mosquitto.conf"
     volumes:
       - mosquitto-data:/mosquitto/data
-      - mosquitto-logs:/mosquitto/logs
     ports:
       - "1883:1883"
 
