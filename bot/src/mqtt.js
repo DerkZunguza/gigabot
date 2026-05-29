@@ -13,12 +13,7 @@ function buildBrokerUrl() {
 
 function connectMQTT() {
   const brokerUrl = buildBrokerUrl();
-  const username = process.env.MQTT_USERNAME || 'mqtt_user';
-  const password = process.env.MQTT_PASSWORD || 'mqtt_password';
-
   client = mqtt.connect(brokerUrl, {
-    username: username,
-    password: password,
     reconnectPeriod: 5000
   });
 

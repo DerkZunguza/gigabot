@@ -3,9 +3,7 @@ name: Build Bot Image
 on:
   push:
     branches: [main]
-    paths:
-      - 'bot/**'
-      - '.github/workflows/build.yml'
+  workflow_dispatch:
 
 env:
   IMAGE: ghcr.io/derkzunguza/mb-bot

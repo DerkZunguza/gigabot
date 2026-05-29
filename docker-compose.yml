@@ -13,6 +13,8 @@ services:
       MQTT_PORT: 1883
       NUMERO_MPESA: ${NUMERO_MPESA}
       NUMERO_EMOLA: ${NUMERO_EMOLA}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
     volumes:
       - auth-data:/app/auth_info_baileys
     depends_on:

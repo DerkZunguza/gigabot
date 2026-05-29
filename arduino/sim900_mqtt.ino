@@ -12,7 +12,7 @@
 #define MQTT_BROKER "acsqsrelatoriosapi.eurekaplatformapi.xyz"
 #define MQTT_PORT 1883
 #define MQTT_USERNAME "bot"
-#define MQTT_PASSWORD "arduino_password_change_this"
+#define MQTT_PASSWORD "eurekav1gigabot123"
 #define MQTT_TOPIC_SMS "sms/entrada"
 
 // APN da Vodacom Moçambique

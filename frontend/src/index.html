@@ -1,98 +1,107 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot MB Venda - WhatsApp Manager</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bot MB — Painel</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🤖 Bot MB Venda</h1>
-            <p>Sistema de Venda Automática de Pacotes MB</p>
-        </header>
 
-        <div class="status-card">
-            <h2>Status da Conexão WhatsApp</h2>
-            <div id="status-indicator" class="status-indicator disconnected">
-                <span class="status-dot"></span>
-                <span id="status-text">Desconectado</span>
-            </div>
-            <div id="qr-container" class="qr-container hidden">
-                <h3>📱 Escaneie o QR Code para conectar o WhatsApp</h3>
-                <div class="qr-wrapper">
-                    <img id="qr-image" src="" alt="QR Code">
-                </div>
-                <p class="qr-instructions">
-                    1. Abra o WhatsApp no seu celular<br>
-                    2. Vá em Configurações > Aparelhos conectados<br>
-                    3. Toque em "Conectar um aparelho"<br>
-                    4. Escaneie o QR Code acima
-                </p>
-            </div>
-            <button id="restart-btn" class="btn btn-secondary">🔄 Reiniciar Conexão</button>
-        </div>
-
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="send">Enviar Mensagem</button>
-            <button class="tab-btn" data-tab="contacts">Contatos</button>
-            <button class="tab-btn" data-tab="messages">Mensagens Agendadas</button>
-            <button class="tab-btn" data-tab="history">Histórico</button>
-        </div>
-
-        <div id="send-tab" class="tab-content active">
-            <div class="send-message-card">
-                <h2>Enviar Mensagem</h2>
-                <form id="send-form">
-                    <div class="form-group">
-                        <label for="phone">Número (com DDD, sem +):</label>
-                        <input type="text" id="phone" placeholder="Ex: 258841234567" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="message">Mensagem:</label>
-                        <textarea id="message" rows="4" placeholder="Digite sua mensagem..." required></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Enviar Mensagem</button>
-                </form>
-                <div id="message-result" class="message-result"></div>
-            </div>
-        </div>
-
-        <div id="contacts-tab" class="tab-content">
-            <div class="contacts-card">
-                <h2>Gerenciar Contatos</h2>
-                <form id="contact-form" class="inline-form">
-                    <input type="text" id="contact-name" placeholder="Nome" required>
-                    <input type="text" id="contact-phone" placeholder="Telefone (258841234567)" required>
-                    <button type="submit" class="btn btn-primary">Adicionar</button>
-                </form>
-                <div id="contacts-list" class="list-container"></div>
-            </div>
-        </div>
-
-        <div id="messages-tab" class="tab-content">
-            <div class="messages-card">
-                <h2>Mensagens Agendadas</h2>
-                <form id="scheduled-form" class="inline-form">
-                    <input type="text" id="scheduled-phone" placeholder="Telefone" required>
-                    <input type="text" id="scheduled-message" placeholder="Mensagem" required>
-                    <input type="datetime-local" id="scheduled-time">
-                    <button type="submit" class="btn btn-primary">Agendar</button>
-                </form>
-                <div id="messages-list" class="list-container"></div>
-            </div>
-        </div>
-
-        <div id="history-tab" class="tab-content">
-            <div class="history-card">
-                <h2>Histórico de Mensagens</h2>
-                <button id="clear-history" class="btn btn-secondary">Limpar Histórico</button>
-                <div id="history-list" class="list-container"></div>
-            </div>
-        </div>
+  <!-- LOGIN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="login-logo">🤖</div>
+      <h1>Bot MB Venda</h1>
+      <p>Acesso restrito</p>
+      <form id="login-form">
+        <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit" class="btn btn-primary btn-full">Entrar</button>
+        <p id="login-error" class="error-msg hidden">Password incorrecta</p>
+      </form>
     </div>
+  </div>
 
-    <script src="script.js"></script>
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="hidden">
+    <nav class="navbar">
+      <div class="nav-brand">🤖 Bot MB</div>
+      <div class="nav-right">
+        <span id="nav-status" class="nav-badge disconnected">Desconectado</span>
+        <button id="logout-btn" class="btn-icon" title="Sair">⏻</button>
+      </div>
+    </nav>
+
+    <main class="main">
+
+      <!-- STATUS + QR -->
+      <section class="card" id="connection-card">
+        <div class="card-header">
+          <h2>Conexão WhatsApp</h2>
+          <button id="restart-btn" class="btn btn-sm btn-secondary">🔄 Reiniciar</button>
+        </div>
+
+        <div id="status-bar" class="status-bar disconnected">
+          <span class="status-dot"></span>
+          <span id="status-text">A verificar...</span>
+        </div>
+
+        <div id="qr-section" class="qr-section hidden">
+          <p class="qr-hint">📱 Abra o WhatsApp → Aparelhos conectados → Conectar um aparelho</p>
+          <div class="qr-box">
+            <img id="qr-image" src="" alt="QR Code WhatsApp">
+          </div>
+        </div>
+      </section>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-hoje">—</div>
+          <div class="stat-label">Vendas hoje</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Total pedidos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-pendentes">—</div>
+          <div class="stat-label">Pendentes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-clientes">—</div>
+          <div class="stat-label">Clientes</div>
+        </div>
+      </div>
+
+      <!-- PEDIDOS RECENTES -->
+      <section class="card">
+        <div class="card-header">
+          <h2>Pedidos Recentes</h2>
+          <button id="refresh-btn" class="btn btn-sm btn-secondary">↻ Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table id="pedidos-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Pacote</th>
+                <th>Valor</th>
+                <th>Método</th>
+                <th>Estado</th>
+                <th>Data</th>
+              </tr>
+            </thead>
+            <tbody id="pedidos-body">
+              <tr><td colspan="6" class="empty">A carregar...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
