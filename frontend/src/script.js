@@ -134,14 +134,30 @@ document.getElementById('sms-clear').addEventListener('click', async () => {
 
 // ── USSD CONSOLA ──────────────────────────────────────
 
+// Detecta opcoes numeradas numa resposta USSD
+// Ex: "1. SoPraTi\n2. Chamadas e SMS\n3. Super Jackpot"
+function parseOpcoes(texto) {
+  return texto.split('\n')
+    .map(l => l.trim())
+    .filter(l => /^\d+[.)]\s+/.test(l))
+    .map(l => {
+      const m = l.match(/^(\d+)[.)]\s+(.+)/);
+      return m ? { num: m[1], texto: m[2] } : null;
+    })
+    .filter(Boolean);
+}
+
 async function executarUSSD(codigo) {
-  const res    = document.getElementById('ussd-result');
-  const btn    = document.getElementById('ussd-run');
-  btn.disabled = true;
+  const res      = document.getElementById('ussd-result');
+  const menuEl   = document.getElementById('ussd-menu');
+  const btn      = document.getElementById('ussd-run');
+  btn.disabled   = true;
   btn.textContent = 'A executar...';
   res.className   = 'ussd-result';
-  res.textContent = 'A aguardar resposta do Arduino...';
+  res.textContent = `> ${codigo}\nA aguardar resposta...`;
   res.classList.remove('hidden');
+  menuEl.classList.add('hidden');
+  menuEl.innerHTML = '';
 
   const data = await api('/ussd', {
     method: 'POST',
@@ -161,8 +177,26 @@ async function executarUSSD(codigo) {
     res.textContent = data.error || 'Erro desconhecido';
     return;
   }
+
+  const resposta = (data.resposta || '').trim();
   res.className   = 'ussd-result';
-  res.textContent = `Codigo: ${data.codigo}\n\n${data.resposta}`;
+  res.textContent = `> ${codigo}\n\n${resposta || '(sem resposta — actualiza o firmware do Arduino)'}`;
+
+  // Detectar menu interactivo e mostrar botoes
+  const opcoes = parseOpcoes(resposta);
+  if (opcoes.length > 0) {
+    menuEl.classList.remove('hidden');
+    opcoes.forEach(op => {
+      const btn2 = document.createElement('button');
+      btn2.className = 'ussd-menu-btn';
+      btn2.innerHTML = `<span class="opt-num">${op.num}.</span>${op.texto}`;
+      btn2.addEventListener('click', () => {
+        document.getElementById('ussd-input').value = op.num;
+        executarUSSD(op.num);
+      });
+      menuEl.appendChild(btn2);
+    });
+  }
 }
 
 document.getElementById('ussd-run').addEventListener('click', () => {

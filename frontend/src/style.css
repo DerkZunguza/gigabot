@@ -654,6 +654,27 @@ tr:hover td { background: var(--surface2); }
 }
 .ussd-result.error { color: var(--red); }
 
+.ussd-menu {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ussd-menu-btn {
+  padding: 8px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  text-align: left;
+}
+.ussd-menu-btn:hover { background: rgba(79,110,247,.15); }
+.ussd-menu-btn .opt-num { font-size: 1.1rem; margin-right: 6px; }
+
 .ussd-quick {
   cursor: pointer;
   transition: border-color .15s;
