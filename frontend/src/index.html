@@ -81,6 +81,49 @@
           <div class="hw-label">MongoDB</div>
           <div id="hw-mongo" class="hw-status ok">Ligado</div>
         </div>
+        <div class="hw-item">
+          <div class="hw-label">Telegram Bot</div>
+          <div id="hw-telegram" class="hw-status">--</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TELEGRAM -->
+    <section class="card">
+      <div class="card-header">
+        <h2>Telegram — @Gigabotmz_bot</h2>
+      </div>
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">
+        Controla o bot remotamente pelo Telegram. Envia os comandos abaixo para <strong>@Gigabotmz_bot</strong>.
+      </p>
+      <div class="cmd-grid">
+        <div class="cmd-item">
+          <div class="cmd-name">/status</div>
+          <div class="cmd-desc">Estado de todos os sistemas (WhatsApp, MQTT, Arduino)</div>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">/qr</div>
+          <div class="cmd-desc">Recebe o QR Code ou codigo de pareamento directamente no Telegram</div>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">/restart</div>
+          <div class="cmd-desc">Reinicia a conexao WhatsApp e gera novo QR</div>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">/pedidos</div>
+          <div class="cmd-desc">Resumo das vendas do dia (total, activados, pendentes, receita)</div>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">/chatid</div>
+          <div class="cmd-desc">Mostra o teu Chat ID para configurar o TELEGRAM_CHAT_ID</div>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">/ajuda</div>
+          <div class="cmd-desc">Lista todos os comandos disponiveis</div>
+        </div>
+      </div>
+      <div class="info-box" style="margin-top:16px">
+        O bot envia o QR Code automaticamente quando o WhatsApp precisa de ser reconectado. Nao precisas de abrir o dashboard.
       </div>
     </section>
 

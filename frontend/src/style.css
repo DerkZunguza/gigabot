@@ -285,6 +285,38 @@ tr:hover td { background: var(--surface2); }
 .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .btn-sm        { padding: 6px 12px; font-size: 0.8rem; }
 
+/* COMMANDS GRID */
+.cmd-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 600px) {
+  .cmd-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .cmd-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.cmd-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+.cmd-name {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.cmd-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .hidden { display: none !important; }
 
 @media (max-width: 480px) {

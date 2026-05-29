@@ -1,9 +1,18 @@
 const TelegramBot = require('node-telegram-bot-api');
 
-const TOKEN     = process.env.TELEGRAM_TOKEN;
-const CHAT_ID   = process.env.TELEGRAM_CHAT_ID;
+const TOKEN   = process.env.TELEGRAM_TOKEN;
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-let bot = null;
+let bot    = null;
+let active = false;
+
+const HELP = `Comandos disponiveis:
+
+/status   - Estado de todos os sistemas
+/qr       - Obter QR Code do WhatsApp
+/restart  - Reiniciar conexao WhatsApp
+/pedidos  - Resumo dos pedidos de hoje
+/chatid   - Ver o teu Chat ID`;
 
 function init() {
   if (!TOKEN) {
@@ -12,59 +21,97 @@ function init() {
   }
 
   bot = new TelegramBot(TOKEN, { polling: true });
+  active = true;
 
   bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
-    const text   = (msg.text || '').trim();
+    const text   = (msg.text || '').trim().split(' ')[0]; // ignorar argumentos
 
-    // Qualquer pessoa pode ver o chat ID para configuracao inicial
     if (text === '/chatid' || text === '/start') {
-      bot.sendMessage(chatId, `O teu Chat ID e: ${chatId}\nAdiciona TELEGRAM_CHAT_ID=${chatId} nas variaveis de ambiente do Portainer.`);
-      return;
-    }
-
-    // Comandos restritos ao administrador
-    if (String(chatId) !== String(CHAT_ID)) {
-      bot.sendMessage(chatId, 'Acesso negado.');
-      return;
-    }
-
-    if (text === '/status') {
-      const whatsapp = require('./whatsapp');
-      const mqttMod  = require('./mqtt');
-      const s = whatsapp.getStatus();
       bot.sendMessage(chatId,
-        `WhatsApp: ${s.status}\nMQTT: ${mqttMod.isConnected() ? 'Ligado' : 'Desligado'}`
+        `O teu Chat ID e: ${chatId}\n\nAdiciona TELEGRAM_CHAT_ID=${chatId} nas variaveis de ambiente do Portainer para activar os comandos de administrador.`
       );
       return;
     }
 
-    if (text === '/qr') {
-      const whatsapp = require('./whatsapp');
-      const s = whatsapp.getStatus();
-      if (s.qrCode) {
-        await sendQR(s.qrCode);
-      } else {
-        bot.sendMessage(chatId, 'QR Code nao disponivel. Usa /restart para gerar um novo.');
+    if (String(chatId) !== String(CHAT_ID)) {
+      bot.sendMessage(chatId, 'Acesso negado. Usa /chatid para ver o teu ID.');
+      return;
+    }
+
+    switch (text) {
+      case '/help':
+      case '/ajuda':
+        bot.sendMessage(chatId, HELP);
+        break;
+
+      case '/status': {
+        const whatsapp = require('./whatsapp');
+        const mqttMod  = require('./mqtt');
+        const fs       = require('fs');
+        const s = whatsapp.getStatus();
+        const lines = [
+          `WhatsApp:  ${s.status}`,
+          `MQTT:      ${mqttMod.isConnected() ? 'Ligado' : 'Desligado'}`,
+          `Arduino:   ${fs.existsSync('/dev/ttyUSB0') ? 'Ligado' : 'Desligado'}`,
+          `MongoDB:   Ligado`,
+        ];
+        bot.sendMessage(chatId, lines.join('\n'));
+        break;
       }
-      return;
-    }
 
-    if (text === '/restart') {
-      bot.sendMessage(chatId, 'A reiniciar WhatsApp...');
-      const whatsapp = require('./whatsapp');
-      whatsapp.restart().catch(() => {});
-      return;
-    }
+      case '/qr': {
+        const whatsapp = require('./whatsapp');
+        const s = whatsapp.getStatus();
+        if (s.qrCode) {
+          await sendQR(s.qrCode);
+        } else if (s.pairingCode) {
+          bot.sendMessage(chatId, `Codigo de pareamento: ${s.pairingCode}`);
+        } else {
+          bot.sendMessage(chatId, 'Nenhum codigo disponivel. Usa /restart para gerar um novo QR.');
+        }
+        break;
+      }
 
-    bot.sendMessage(chatId, 'Comandos: /status /qr /restart /chatid');
+      case '/restart': {
+        bot.sendMessage(chatId, 'A reiniciar WhatsApp...');
+        const whatsapp = require('./whatsapp');
+        whatsapp.restart().catch(() => {});
+        break;
+      }
+
+      case '/pedidos': {
+        const Pedido = require('./models/pedido');
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+        const [total, activados, pendentes, receita] = await Promise.all([
+          Pedido.countDocuments({ createdAt: { $gte: hoje } }),
+          Pedido.countDocuments({ createdAt: { $gte: hoje }, status: 'activado' }),
+          Pedido.countDocuments({ status: 'pendente' }),
+          Pedido.aggregate([
+            { $match: { createdAt: { $gte: hoje }, status: 'activado' } },
+            { $group: { _id: null, total: { $sum: '$valorEsperado' } } }
+          ])
+        ]);
+        const totalReceita = receita[0]?.total || 0;
+        bot.sendMessage(chatId,
+          `Pedidos hoje: ${total}\n` +
+          `Activados: ${activados}\n` +
+          `Pendentes: ${pendentes}\n` +
+          `Receita hoje: ${totalReceita} MT`
+        );
+        break;
+      }
+
+      default:
+        bot.sendMessage(chatId, `Comando desconhecido.\n\n${HELP}`);
+    }
   });
 
   bot.on('polling_error', (err) => {
     console.error('Telegram polling error:', err.message);
   });
 
-  console.log('Telegram bot iniciado');
+  console.log('Telegram bot iniciado (@' + (process.env.TELEGRAM_BOT_USERNAME || 'Gigabotmz_bot') + ')');
 }
 
 async function sendQR(qrCodeDataUrl) {
@@ -85,4 +132,6 @@ async function sendMessage(text) {
   bot.sendMessage(CHAT_ID, text).catch(() => {});
 }
 
-module.exports = { init, sendQR, sendMessage };
+function isActive() { return active; }
+
+module.exports = { init, sendQR, sendMessage, isActive };

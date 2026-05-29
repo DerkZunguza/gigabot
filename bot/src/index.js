@@ -217,8 +217,9 @@ app.get('/api/hardware', (req, res) => {
   const fs = require('fs');
   res.json({
     whatsapp: whatsapp.getStatus().status,
-    mqtt: mqtt.isConnected() ? 'connected' : 'disconnected',
-    arduino: fs.existsSync('/dev/ttyUSB0') ? 'connected' : 'disconnected'
+    mqtt:     mqtt.isConnected()      ? 'connected' : 'disconnected',
+    arduino:  fs.existsSync('/dev/ttyUSB0') ? 'connected' : 'disconnected',
+    telegram: telegram.isActive()     ? 'connected' : 'disconnected'
   });
 });
 

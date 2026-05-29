@@ -129,6 +129,7 @@ async function checkHardware() {
   setHwStatus('hw-mqtt',     data.mqtt);
   setHwStatus('hw-arduino',  data.arduino);
   setHwStatus('hw-whatsapp', data.whatsapp);
+  setHwStatus('hw-telegram', data.telegram);
   navMqtt.textContent = 'MQTT: ' + (data.mqtt === 'connected' ? 'Ligado' : 'Desligado');
   navMqtt.className   = 'badge ' + (data.mqtt === 'connected' ? 'badge-green' : 'badge-red');
 }
