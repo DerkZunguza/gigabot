@@ -272,7 +272,7 @@ async function handlePaymentReference(sock, jid, message, cliente) {
       pedidoAtualizado.dataActivacao = new Date();
       await pedidoAtualizado.save();
 
-      // Notificar cliente
+      // Notificar cliente WhatsApp
       const notificacao = `✅ *Pacote Activado com Sucesso!*
 
 📦 Pacote: ${pedidoAtualizado.pacote.mbFormatado}
@@ -284,8 +284,17 @@ Pode começar a usar o seu pacote agora!
 Digite *MENU* para voltar ao menu principal.`;
 
       await sock.sendMessage(jid, { text: notificacao });
+
+      // Notificar administrador via Telegram
+      try {
+        const telegram = require('./telegram');
+        const numero = jid.replace('@s.whatsapp.net', '');
+        telegram.sendMessage(
+          `Nova venda — WhatsApp\n\nCliente: ${numero}\nPacote: ${pedidoAtualizado.pacote.mbFormatado}\nValor: ${pedidoAtualizado.valorEsperado} MT`
+        );
+      } catch (_) {}
     }
-  }, 3000); // Simular 3 segundos de processamento
+  }, 3000);
 
   // Resposta imediata
   const confirmacao = `⏳ Recebemos a referência *${referencia}*
