@@ -221,6 +221,7 @@ String executarUSSD(String codigo) {
     String texto = resp.substring(q1, q2);
     texto.trim();
     texto.replace("\r", "");
+    texto.replace("\n", "\\n"); // codificar para enviar numa linha so
     return texto;
   }
 
