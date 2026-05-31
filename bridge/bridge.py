@@ -204,6 +204,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
         client.subscribe('mb/activar')
         client.subscribe('ussd/executar')
         client.subscribe('at/executar')
+        client.subscribe('sms/enviar')
         client.subscribe('diagnostico/solicitar')
     else:
         log('MQTT', f'Falhou reason={reason_code}')
@@ -229,6 +230,18 @@ def on_message(client, userdata, msg):
                 enviar_serial(f'USSD:{codigo}')
                 threading.Thread(target=aguardar_e_publicar_ussd, args=(request_id,), daemon=True).start()
 
+        elif msg.topic == 'sms/enviar':
+            numero     = data.get('numero', '')
+            mensagem   = data.get('mensagem', '')
+            request_id = data.get('requestId', '')
+            if numero and mensagem:
+                log('MQTT', f'SMS para {numero}: {mensagem[:30]}')
+                threading.Thread(
+                    target=enviar_sms_at,
+                    args=(numero, mensagem, request_id),
+                    daemon=True
+                ).start()
+
         elif msg.topic == 'at/executar':
             comando    = data.get('comando', '')
             request_id = data.get('requestId', '')
@@ -242,6 +255,62 @@ def on_message(client, userdata, msg):
 
     except Exception as e:
         log('MQTT', f'Erro msg: {e}')
+
+def enviar_sms_at(numero, mensagem, request_id, timeout=30):
+    """Envia SMS via AT+CMGS com fluxo multi-step."""
+    with ser_lock:
+        try:
+            if not ser or not ser.is_open:
+                publicar('sms/resultado', {'requestId': request_id, 'sucesso': False, 'erro': 'Serial nao conectado'})
+                return
+
+            # Passo 1: modo texto
+            ser.write(b'AT+CMGF=1\n')
+            time.sleep(0.5)
+            ser.read(ser.in_waiting)
+
+            # Passo 2: iniciar envio
+            cmd = f'AT+CMGS="{numero}"\r\n'
+            ser.write(cmd.encode())
+
+            # Aguardar prompt '>'
+            resp = ''
+            t = time.time()
+            while time.time() - t < 5:
+                if ser.in_waiting:
+                    resp += ser.read(ser.in_waiting).decode('utf-8', errors='ignore')
+                if '>' in resp:
+                    break
+                time.sleep(0.1)
+
+            if '>' not in resp:
+                publicar('sms/resultado', {'requestId': request_id, 'sucesso': False, 'erro': 'Sem prompt >'})
+                return
+
+            # Passo 3: enviar mensagem + Ctrl+Z (0x1A)
+            ser.write((mensagem + '\x1A').encode())
+
+            # Aguardar +CMGS: ou ERROR
+            resp2 = ''
+            t2 = time.time()
+            while time.time() - t2 < timeout:
+                if ser.in_waiting:
+                    resp2 += ser.read(ser.in_waiting).decode('utf-8', errors='ignore')
+                if '+CMGS:' in resp2 or 'ERROR' in resp2:
+                    break
+                time.sleep(0.2)
+
+            sucesso = '+CMGS:' in resp2
+            log('SMS', f'Envio para {numero}: {"OK" if sucesso else "ERRO"} — {resp2.strip()[:60]}')
+            publicar('sms/resultado', {
+                'requestId': request_id,
+                'sucesso':   sucesso,
+                'resposta':  resp2.strip(),
+                'numero':    numero
+            })
+        except Exception as e:
+            log('SMS', f'Erro envio: {e}')
+            publicar('sms/resultado', {'requestId': request_id, 'sucesso': False, 'erro': str(e)})
 
 def aguardar_e_publicar_at(request_id, timeout=5):
     t = time.time()

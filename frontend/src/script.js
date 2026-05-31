@@ -54,6 +54,10 @@ document.getElementById('at-clear').addEventListener('click', () => {
   document.getElementById('at-terminal').innerHTML = '';
 });
 
+document.getElementById('at-fontsize').addEventListener('change', (e) => {
+  document.getElementById('at-terminal').style.fontSize = e.target.value + 'px';
+});
+
 document.querySelectorAll('.at-quick').forEach(btn => {
   btn.addEventListener('click', () => {
     document.getElementById('at-input').value = btn.dataset.cmd;
@@ -217,7 +221,69 @@ document.querySelectorAll('.ussd-quick').forEach(el => {
   });
 });
 
+// ── ADMIN / SESSOES SSH ───────────────────────────────────────
+
+async function loadSessions() {
+  const data = await api('/sessions');
+  const tbody = document.getElementById('sessions-body');
+  const count = document.getElementById('sessions-count');
+
+  if (!data) { count.textContent = 'Erro ao carregar'; return; }
+
+  const total = data.total || 0;
+  count.textContent = total === 0 ? 'Sem sessoes SSH activas' : `${total} sessao(oes) activa(s)`;
+
+  if (!data.sessions?.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Sem sessoes activas</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.sessions.map((s, i) => `<tr>
+    <td>${i + 1}</td>
+    <td><strong>${s.ip}</strong></td>
+    <td>${s.port}</td>
+  </tr>`).join('');
+}
+
+document.getElementById('sessions-refresh').addEventListener('click', loadSessions);
+
+// SMS via Arduino AT+CMGS
+document.getElementById('at-sms-send').addEventListener('click', async () => {
+  const numero   = document.getElementById('at-sms-numero').value.trim();
+  const mensagem = document.getElementById('at-sms-msg').value.trim();
+  const statusEl = document.getElementById('at-sms-status');
+  const btn      = document.getElementById('at-sms-send');
+
+  if (!numero || !mensagem) {
+    statusEl.className = 'alert alert-yellow';
+    statusEl.textContent = 'Preenche o numero e a mensagem.';
+    statusEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'A enviar via Arduino...';
+
+  const data = await api('/sms/enviar', {
+    method: 'POST',
+    body: JSON.stringify({ numero, mensagem })
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Enviar SMS';
+  statusEl.classList.remove('hidden');
+
+  if (data?.sucesso) {
+    statusEl.className = 'alert alert-green';
+    statusEl.textContent = `SMS enviado para ${numero}`;
+    document.getElementById('at-sms-msg').value = '';
+  } else {
+    statusEl.className = 'alert alert-yellow';
+    statusEl.textContent = data?.erro || data?.error || 'Erro ao enviar';
+  }
+});
+
 const TITLES = {
+  admin:     'Admin — Sessoes e SMS',
   at:        'Console AT — SIM900',
   send:      'Enviar Mensagem WhatsApp',
   dashboard: 'Visao Geral',
@@ -243,6 +309,7 @@ navLinks.forEach(link => {
     document.querySelector('.sidebar').classList.remove('open');
     if (sec === 'pedidos')  loadAllPedidos();
     if (sec === 'sms')      loadSMS();
+    if (sec === 'admin')    loadSessions();
     if (sec === 'at') {
       atAppend('Console AT pronto. Arduino: ' + (document.getElementById('hw-arduino')?.textContent || '--'), 'info');
     }

@@ -28,6 +28,7 @@ function connectMQTT() {
     client.subscribe('status/arduino');
     client.subscribe('ussd/resultado');
     client.subscribe('at/resultado');
+    client.subscribe('sms/resultado');
   });
 
   client.on('message', async (topic, message) => {
@@ -43,6 +44,11 @@ function connectMQTT() {
         case 'status/arduino':
           arduinoStatus = { ...data, ts: Date.now() };
           break;
+        case 'sms/resultado': {
+          const resolve = ussdPending.get(data.requestId);
+          if (resolve) { resolve(data); ussdPending.delete(data.requestId); }
+          break;
+        }
         case 'at/resultado': {
           const resolve = ussdPending.get(data.requestId);
           if (resolve) { resolve(data.resposta); ussdPending.delete(data.requestId); }
@@ -198,5 +204,6 @@ module.exports = {
   isConnected,
   getArduinoStatus,
   executarUSSD,
-  executarAT
+  executarAT,
+  registerUssdRequest
 };

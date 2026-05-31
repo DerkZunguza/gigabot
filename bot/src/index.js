@@ -258,6 +258,55 @@ app.get('/api/hardware', (req, res) => {
   });
 });
 
+// ==================== SESSOES SSH ====================
+
+app.get('/api/sessions', (req, res) => {
+  const fs = require('fs');
+  try {
+    // /proc/net/tcp montado do host via docker-compose
+    const raw = fs.readFileSync('/host/proc/net/tcp', 'utf8');
+    const SSH_PORT = '0016'; // 22 em hex
+    const sessions = raw.split('\n').slice(1)
+      .map(l => l.trim().split(/\s+/))
+      .filter(p => p.length > 4 && p[1].endsWith(':' + SSH_PORT) && p[3] === '01')
+      .map(p => {
+        const remHex = p[2];
+        const [ipHex, portHex] = remHex.split(':');
+        const ip = [
+          parseInt(ipHex.substr(6,2), 16),
+          parseInt(ipHex.substr(4,2), 16),
+          parseInt(ipHex.substr(2,2), 16),
+          parseInt(ipHex.substr(0,2), 16)
+        ].join('.');
+        return { ip, port: parseInt(portHex, 16) };
+      })
+      .filter(s => s.ip !== '0.0.0.0');
+    res.json({ sessions, total: sessions.length });
+  } catch {
+    res.json({ sessions: [], total: 0, nota: 'Monte /proc/net/tcp no docker-compose' });
+  }
+});
+
+// ==================== ENVIAR SMS VIA ARDUINO ====================
+
+app.post('/api/sms/enviar', async (req, res) => {
+  const { numero, mensagem } = req.body;
+  if (!numero || !mensagem) return res.status(400).json({ error: 'Numero e mensagem obrigatorios' });
+  if (!mqtt.isConnected()) return res.status(503).json({ error: 'MQTT nao conectado' });
+  if (!mqtt.getArduinoStatus().connected) return res.status(503).json({ error: 'Arduino nao conectado' });
+  try {
+    const requestId = `sms_${Date.now()}`;
+    const resposta = await new Promise((resolve) => {
+      const timer = setTimeout(() => resolve({ sucesso: false, erro: 'TIMEOUT' }), 35000);
+      mqtt.registerUssdRequest(requestId, (r) => { clearTimeout(timer); resolve(r); });
+      mqtt.publish('sms/enviar', { numero, mensagem, requestId });
+    });
+    res.json(resposta);
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // ==================== SMS ====================
 
 app.get('/api/sms', async (req, res) => {

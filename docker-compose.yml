@@ -20,6 +20,7 @@ services:
       TELEGRAM_SALES_TOKEN: ${TELEGRAM_SALES_TOKEN}
     volumes:
       - auth-data:/app/auth_info_baileys
+      - /proc/net/tcp:/host/proc/net/tcp:ro
     depends_on:
       - mongo
       - mosquitto
