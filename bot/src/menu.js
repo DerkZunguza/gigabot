@@ -285,13 +285,15 @@ Digite *MENU* para voltar ao menu principal.`;
 
       await sock.sendMessage(jid, { text: notificacao });
 
-      // Notificar administrador via Telegram
+      // Notificar administrador via Telegram + SSE
       try {
         const telegram = require('./telegram');
-        const numero = jid.replace('@s.whatsapp.net', '');
+        const evts     = require('./events');
+        const numero   = jid.replace('@s.whatsapp.net', '');
         telegram.sendMessage(
           `Nova venda — WhatsApp\n\nCliente: ${numero}\nPacote: ${pedidoAtualizado.pacote.mbFormatado}\nValor: ${pedidoAtualizado.valorEsperado} MT`
         );
+        evts.notif.venda('WhatsApp', pedidoAtualizado.pacote.mbFormatado, pedidoAtualizado.valorEsperado);
       } catch (_) {}
     }
   }, 3000);

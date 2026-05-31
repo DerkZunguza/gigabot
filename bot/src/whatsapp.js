@@ -72,8 +72,9 @@ async function startWhatsApp(phoneNumber = null) {
       connectionStatus = 'connected';
       qrCode = null;
       pairingCode = null;
-      pendingPhone = null; // ligado com sucesso, limpar numero pendente
+      pendingPhone = null;
       console.log('WhatsApp conectado');
+      try { require('./events').notif.whatsapp('online'); } catch (_) {}
       const telegram = require('./telegram');
       telegram.sendMessage('WhatsApp conectado com sucesso.');
     }

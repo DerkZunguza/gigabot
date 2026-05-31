@@ -2,6 +2,7 @@ const mqtt   = require('mqtt');
 const Pedido = require('./models/pedido');
 const SMS    = require('./models/sms');
 const menu   = require('./menu');
+const events = require('./events');
 
 let client = null;
 let arduinoStatus = { connected: false, signal: 0, ts: null };
@@ -41,9 +42,14 @@ function connectMQTT() {
         case 'mb/confirmacao':
           await handleActivationConfirmation(data);
           break;
-        case 'status/arduino':
+        case 'status/arduino': {
+          const anterior = arduinoStatus.connected;
           arduinoStatus = { ...data, ts: Date.now() };
+          if (data.connected !== anterior) {
+            events.notif.arduino(data.connected ? 'online' : 'offline', data.signal || 0);
+          }
           break;
+        }
         case 'sms/resultado': {
           const resolve = ussdPending.get(data.requestId);
           if (resolve) { resolve(data); ussdPending.delete(data.requestId); }
@@ -91,6 +97,7 @@ async function handleIncomingSMS(data) {
       ? SMS.detectarTipo(mensagem)
       : (mensagem.toLowerCase().includes('confirmacao') ? 'mpesa' : mensagem.toLowerCase().includes('transferencia') ? 'emola' : 'outro');
     await SMS.create({ remetente, mensagem, tipo });
+    events.notif.sms(remetente, mensagem.substring(0, 60));
   } catch (e) { console.error('Erro ao guardar SMS:', e.message); }
 
   // Verificar se é confirmação M-Pesa

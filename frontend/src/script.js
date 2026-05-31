@@ -605,12 +605,125 @@ async function loadConfig() {
   }).join('');
 }
 
+// ── NOTIFICACOES SSE ──────────────────────────────────────────
+
+let notifCount = 0;
+const notifHistory = [];
+
+const CFG = {
+  venda:    { icon: '💰', title: 'Nova venda',        cls: 'venda',    dot: 'nd-venda'    },
+  whatsapp: { icon: '📱', title: 'WhatsApp',          cls: 'whatsapp', dot: 'nd-whatsapp' },
+  arduino:  { icon: '🔌', title: 'Arduino / SIM900',  cls: 'arduino',  dot: 'nd-arduino'  },
+  mqtt:     { icon: '📡', title: 'Broker MQTT',       cls: 'sistema',  dot: 'nd-mqtt'     },
+  sms:      { icon: '✉',  title: 'SMS recebido',      cls: 'sms',      dot: 'nd-sms'      },
+  alerta:   { icon: '⚠',  title: 'Alerta',            cls: 'alerta',   dot: 'nd-alerta'   },
+  sistema:  { icon: 'ℹ',  title: 'Sistema',           cls: 'sistema',  dot: 'nd-sistema'  },
+  pagamento:{ icon: '💳', title: 'Pagamento',         cls: 'venda',    dot: 'nd-venda'    },
+};
+
+function formatarEvento(tipo, dados) {
+  const c = CFG[tipo] || CFG.sistema;
+  let desc = '';
+  if (tipo === 'venda')     desc = `${dados.canal} — ${dados.pacote} — ${dados.valor} MT`;
+  else if (tipo === 'whatsapp') desc = dados.estado === 'online' ? 'Conectado' : 'Desconectado';
+  else if (tipo === 'arduino')  desc = dados.estado === 'online' ? `Ligado (sinal ${dados.sinal}/31)` : 'Desligado';
+  else if (tipo === 'mqtt')     desc = dados.estado === 'online' ? 'Broker ligado' : 'Broker desligado';
+  else if (tipo === 'sms')      desc = `De ${dados.remetente}: ${dados.preview}`;
+  else if (tipo === 'alerta')   desc = dados.msg;
+  else if (tipo === 'pagamento') desc = `${dados.numero} — ${dados.valor} MT via ${dados.metodo}`;
+  else                          desc = JSON.stringify(dados);
+  return { ...c, desc };
+}
+
+function mostrarToast(tipo, dados) {
+  const { icon, title, desc, cls } = formatarEvento(tipo, dados);
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${cls}`;
+  toast.innerHTML = `
+    <span class="toast-icon">${icon}</span>
+    <div class="toast-body">
+      <div class="toast-title">${title}</div>
+      <div class="toast-msg">${desc}</div>
+    </div>`;
+  document.getElementById('toast-container').appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 220);
+  }, 4000);
+}
+
+function adicionarNotif(tipo, dados, ts) {
+  const { icon, title, desc, dot } = formatarEvento(tipo, dados);
+  const hora = new Date(ts).toLocaleTimeString('pt');
+  notifHistory.unshift({ tipo, dados, ts, icon, title, desc, dot, hora });
+  if (notifHistory.length > 50) notifHistory.pop();
+
+  notifCount++;
+  const badge = document.getElementById('notif-badge');
+  badge.textContent = notifCount > 99 ? '99+' : notifCount;
+  badge.classList.remove('hidden');
+
+  renderNotifList();
+}
+
+function renderNotifList() {
+  const list = document.getElementById('notif-list');
+  if (!notifHistory.length) {
+    list.innerHTML = '<div class="empty" style="padding:24px">Sem notificacoes</div>';
+    return;
+  }
+  list.innerHTML = notifHistory.map(n => `
+    <div class="notif-item">
+      <span class="notif-dot ${n.dot}"></span>
+      <div class="notif-body">
+        <div class="notif-title">${n.icon} ${n.title}</div>
+        <div class="notif-desc">${n.desc}</div>
+      </div>
+      <span class="notif-time">${n.hora}</span>
+    </div>`).join('');
+}
+
+// Bell toggle
+document.getElementById('notif-bell').addEventListener('click', () => {
+  const panel = document.getElementById('notif-panel');
+  panel.classList.toggle('hidden');
+  if (!panel.classList.contains('hidden')) {
+    notifCount = 0;
+    document.getElementById('notif-badge').classList.add('hidden');
+  }
+});
+document.getElementById('notif-close').addEventListener('click', () => {
+  document.getElementById('notif-panel').classList.add('hidden');
+});
+document.getElementById('notif-clear').addEventListener('click', () => {
+  notifHistory.length = 0;
+  renderNotifList();
+});
+
+// SSE connection
+function conectarSSE() {
+  const sse = new EventSource('/api/events');
+  sse.onmessage = (e) => {
+    try {
+      const { tipo, dados, ts } = JSON.parse(e.data);
+      mostrarToast(tipo, dados);
+      adicionarNotif(tipo, dados, ts);
+      // Actualizar UI relevante
+      if (tipo === 'whatsapp') checkStatus();
+      if (tipo === 'arduino' || tipo === 'mqtt') checkHardware();
+      if (tipo === 'venda') { loadStats(); loadPedidos(); }
+    } catch (_) {}
+  };
+  sse.onerror = () => setTimeout(conectarSSE, 5000);
+}
+
 // ── INIT ──────────────────────────────────────────────
 
 checkStatus();
 checkHardware();
 loadStats();
 loadPedidos();
+conectarSSE();
 
 setInterval(checkStatus,   4000);
 setInterval(checkHardware, 10000);

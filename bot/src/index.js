@@ -11,6 +11,7 @@ const telegram      = require('./telegram');
 const telegramSales = require('./telegram-sales');
 const logger        = require('./logger');
 const monitor       = require('./monitor');
+const events        = require('./events');
 const Cliente = require('./models/cliente');
 const Pedido  = require('./models/pedido');
 const Pacote  = require('./models/pacote');
@@ -381,6 +382,12 @@ app.post('/api/ussd', async (req, res) => {
 app.post('/api/ussd/fechar', (req, res) => {
   mqtt.publish('ussd/fechar', {});
   res.json({ success: true });
+});
+
+// ==================== SSE EVENTOS ====================
+
+app.get('/api/events', (req, res) => {
+  events.registar(res);
 });
 
 // ==================== LOGS ====================

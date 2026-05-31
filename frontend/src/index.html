@@ -571,6 +571,29 @@
     </div>
   </div>
 
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- NOTIFICATION PANEL -->
+  <div id="notif-panel" class="notif-panel hidden">
+    <div class="notif-panel-head">
+      <span>Notificacoes</span>
+      <div style="display:flex;gap:8px">
+        <button id="notif-clear" class="btn btn-ghost btn-sm">Limpar</button>
+        <button id="notif-close" class="btn-icon">&#x2715;</button>
+      </div>
+    </div>
+    <div id="notif-list" class="notif-list">
+      <div class="empty" style="padding:24px">Sem notificacoes</div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION BELL -->
+  <button id="notif-bell" class="notif-bell" title="Notificacoes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <span id="notif-badge" class="notif-badge hidden">0</span>
+  </button>
+
   <script src="script.js"></script>
 </body>
 </html>

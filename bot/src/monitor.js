@@ -1,5 +1,6 @@
 const logger   = require('./logger');
 const telegram = require('./telegram');
+const events   = require('./events');
 
 // Estado anterior para detectar mudancas
 const prev = {};
@@ -33,10 +34,17 @@ async function verificar() {
       const msg = `ALERTA: ${nome} ficou offline (${estado})`;
       logger.warn(msg);
       telegram.sendMessage(`⚠️ ${msg}`);
+      if (chave === 'whatsapp') events.notif.whatsapp('offline');
+      else if (chave === 'mqtt') events.notif.mqtt('offline');
+      else if (chave === 'arduino') events.notif.arduino('offline', 0);
+      else events.notif.alerta(msg);
     } else if (!eraOk && anterior !== undefined) {
       const msg = `${nome} voltou online`;
       logger.success(msg);
       telegram.sendMessage(`✅ ${msg}`);
+      if (chave === 'whatsapp') events.notif.whatsapp('online');
+      else if (chave === 'mqtt') events.notif.mqtt('online');
+      else if (chave === 'arduino') events.notif.arduino('online', 0);
     }
 
     prev[chave] = estado;
