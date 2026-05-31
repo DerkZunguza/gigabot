@@ -90,6 +90,12 @@ void processarComando(String cmd) {
   } else if (cmd == "STATUS") {
     Serial.println("STATUS|OK|signal=" + String(verificarSinal()));
 
+  } else if (cmd == "USSD_CLOSE") {
+    sim900.println("AT+CUSD=2");
+    delay(300);
+    while (sim900.available()) sim900.read();
+    Serial.println("USSD_CLOSED|OK");
+
   } else if (cmd == "SMS_CHECK") {
     verificarSMSNovos();
 
@@ -217,15 +223,34 @@ String executarUSSD(String codigo) {
   int q1 = resp.indexOf("\"", cusdPos) + 1;
   int q2 = resp.lastIndexOf("\","); // ultimo ", que fecha o conteudo
 
-  if (q1 > 0 && q2 > q1) {
-    String texto = resp.substring(q1, q2);
-    texto.trim();
-    texto.replace("\r", "");
-    texto.replace("\n", "\\n"); // codificar para enviar numa linha so
-    return texto;
+  // Extrair codigo de estado: +CUSD: N,"texto",15
+  // N=0 encerrado, N=1 sessao activa (mais opcoes), N=2 encerrado pela rede, N=4 erro
+  String statusCode = "0";
+  int statusPos = resp.indexOf("+CUSD:");
+  if (statusPos >= 0) {
+    int afterColon = statusPos + 6;
+    while (afterColon < resp.length() && resp[afterColon] == ' ') afterColon++;
+    statusCode = String(resp[afterColon]);
   }
 
-  return resp;
+  String texto = resp;
+  if (q1 > 0 && q2 > q1) {
+    texto = resp.substring(q1, q2);
+    texto.trim();
+    texto.replace("\r", "");
+    texto.replace("\n", "\\n");
+  }
+
+  // So fechar sessao se a rede ja a encerrou (N != 1)
+  if (statusCode != "1") {
+    delay(200);
+    sim900.println("AT+CUSD=2");
+    delay(300);
+    while (sim900.available()) sim900.read();
+  }
+
+  // Formato: STATUS|texto (status=1 = sessao activa)
+  return statusCode + "|" + texto;
 }
 
 // ── UTILIDADES ────────────────────────────────────────

@@ -348,6 +348,10 @@
             <button id="ussd-run" class="btn btn-primary">Executar</button>
           </div>
 
+          <div id="ussd-session-bar" class="ussd-session-bar hidden">
+            <span id="ussd-session-label">Sessao activa</span>
+            <button id="ussd-close-btn" class="btn btn-ghost btn-sm" style="color:var(--red)">Fechar Sessao</button>
+          </div>
           <div id="ussd-result" class="ussd-result hidden"></div>
           <div id="ussd-menu" class="ussd-menu hidden"></div>
 
@@ -442,15 +446,34 @@
 
           <div style="margin-top:16px">
             <div class="muted-text" style="margin-bottom:8px">Comandos rapidos:</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px">
-              <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT">AT (ping)</button>
-              <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CSQ">Sinal</button>
-              <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CREG?">Registo rede</button>
-              <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+COPS?">Operadora</button>
-              <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGF=1">Modo texto SMS</button>
-              <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGL=\"ALL\"">Listar SMS</button>
-              <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CIMI">IMSI do SIM</button>
-              <button class="btn btn-ghost btn-sm at-quick" data-cmd="ATI">Info modem</button>
+            <div class="at-groups">
+              <div class="at-group-label">Sistema</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT">Ping</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CSQ">Sinal</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CREG?">Rede</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+COPS?">Operadora</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="ATI">Info modem</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CIMI">IMSI SIM</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CNUM">Numero SIM</button>
+              </div>
+              <div class="at-group-label">SMS</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGF=1">Modo texto</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGL=&quot;ALL&quot;">Listar todos</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGL=&quot;REC UNREAD&quot;">Nao lidos</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGD=1,4">Apagar todos</button>
+              </div>
+              <div class="at-group-label">USSD via AT</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;*111#&quot;,15">*111# menu</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;*123#&quot;,15">*123# pacotes</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;*401#&quot;,15">*401# M-Pesa</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;1&quot;,15">Opcao 1</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;2&quot;,15">Opcao 2</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;3&quot;,15">Opcao 3</button>
+                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=2">Fechar sessao</button>
+              </div>
             </div>
           </div>
         </div>

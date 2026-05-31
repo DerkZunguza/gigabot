@@ -365,15 +365,22 @@ app.post('/api/ussd', async (req, res) => {
   const { codigo } = req.body;
   if (!codigo) return res.status(400).json({ error: 'Codigo USSD obrigatorio' });
   if (!mqtt.isConnected()) return res.status(503).json({ error: 'MQTT nao conectado' });
-  if (!mqtt.getArduinoStatus().connected) return res.status(503).json({ error: 'Arduino nao conectado' });
   try {
-    logger.info(`USSD manual: ${codigo}`);
-    const resposta = await mqtt.executarUSSD(codigo);
-    logger.info(`USSD resposta: ${resposta}`);
-    res.json({ success: true, codigo, resposta });
+    logger.info(`USSD: ${codigo}`);
+    const resultado = await mqtt.executarUSSD(codigo);
+    // resultado pode ser string ou { texto, sessaoActiva }
+    const resposta     = resultado?.texto     ?? resultado ?? '';
+    const sessaoActiva = resultado?.sessaoActiva ?? false;
+    logger.info(`USSD resposta (sessao=${sessaoActiva}): ${String(resposta).substring(0,60)}`);
+    res.json({ success: true, codigo, resposta, sessaoActiva });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
+});
+
+app.post('/api/ussd/fechar', (req, res) => {
+  mqtt.publish('ussd/fechar', {});
+  res.json({ success: true });
 });
 
 // ==================== LOGS ====================

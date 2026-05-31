@@ -151,6 +151,8 @@ function parseOpcoes(texto) {
     .filter(Boolean);
 }
 
+const ussdSessionBar = () => document.getElementById('ussd-session-bar');
+
 async function executarUSSD(codigo) {
   const res      = document.getElementById('ussd-result');
   const menuEl   = document.getElementById('ussd-menu');
@@ -174,19 +176,29 @@ async function executarUSSD(codigo) {
   if (!data) {
     res.className   = 'ussd-result error';
     res.textContent = 'Erro de ligacao ao servidor.';
+    ussdSessionBar().classList.add('hidden');
     return;
   }
   if (!data.success) {
     res.className   = 'ussd-result error';
     res.textContent = data.error || 'Erro desconhecido';
+    ussdSessionBar().classList.add('hidden');
     return;
   }
 
   const resposta = (data.resposta || '').trim();
   res.className   = 'ussd-result';
-  res.textContent = `> ${codigo}\n\n${resposta || '(sem resposta — actualiza o firmware do Arduino)'}`;
+  res.textContent = `> ${codigo}\n\n${resposta || '(sem resposta — carrega o novo firmware no Arduino)'}`;
 
-  // Detectar menu interactivo e mostrar botoes
+  // Mostrar/esconder barra de sessao
+  if (data.sessaoActiva) {
+    document.getElementById('ussd-session-label').textContent = 'Sessao activa — selecciona uma opcao ou fecha';
+    ussdSessionBar().classList.remove('hidden');
+  } else {
+    ussdSessionBar().classList.add('hidden');
+  }
+
+  // Botoes de menu interactivo
   const opcoes = parseOpcoes(resposta);
   if (opcoes.length > 0) {
     menuEl.classList.remove('hidden');
@@ -202,6 +214,18 @@ async function executarUSSD(codigo) {
     });
   }
 }
+
+// Fechar sessao USSD manualmente
+document.getElementById('ussd-close-btn').addEventListener('click', async () => {
+  await api('/ussd/fechar', { method: 'POST' });
+  ussdSessionBar().classList.add('hidden');
+  document.getElementById('ussd-menu').classList.add('hidden');
+  document.getElementById('ussd-menu').innerHTML = '';
+  const res = document.getElementById('ussd-result');
+  res.classList.remove('hidden');
+  res.className = 'ussd-result';
+  res.textContent += '\n\n[Sessao fechada]';
+});
 
 document.getElementById('ussd-run').addEventListener('click', () => {
   const codigo = document.getElementById('ussd-input').value.trim();

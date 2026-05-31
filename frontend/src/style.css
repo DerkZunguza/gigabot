@@ -654,6 +654,30 @@ tr:hover td { background: var(--surface2); }
 }
 .ussd-result.error { color: var(--red); }
 
+.at-groups { margin-top: 14px; }
+.at-group-label {
+  font-size: .7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.ussd-session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(245,185,66,.08);
+  border: 1px solid rgba(245,185,66,.3);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: .82rem;
+  color: var(--yellow);
+  font-weight: 600;
+}
+
 .ussd-menu {
   margin-top: 12px;
   display: flex;

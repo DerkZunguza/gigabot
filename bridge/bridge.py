@@ -203,6 +203,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
         log('MQTT', f'Conectado a {MQTT_HOST} (id={MQTT_CLIENT_ID})')
         client.subscribe('mb/activar')
         client.subscribe('ussd/executar')
+        client.subscribe('ussd/fechar')
         client.subscribe('at/executar')
         client.subscribe('sms/enviar')
         client.subscribe('diagnostico/solicitar')
@@ -241,6 +242,10 @@ def on_message(client, userdata, msg):
                     args=(numero, mensagem, request_id),
                     daemon=True
                 ).start()
+
+        elif msg.topic == 'ussd/fechar':
+            log('MQTT', 'Fechar sessao USSD')
+            enviar_serial('USSD_CLOSE')
 
         elif msg.topic == 'at/executar':
             comando    = data.get('comando', '')
@@ -389,10 +394,15 @@ def loop_serial():
                     at_resp_buffer.append(resp)
 
                 elif linha.startswith('USSD_RESP|'):
-                    resp = linha.split('|', 1)[1] if '|' in linha else ''
-                    resp = resp.replace('\\n', '\n')  # descodificar newlines
-                    ussd_resp_buffer.append(resp)
-                    log('USSD', f'Resposta ({len(resp)} chars): {resp[:60].replace(chr(10)," | ")}')
+                    # Formato: USSD_RESP|STATUS_CODE|texto
+                    partes = linha.split('|', 2)
+                    status_code = partes[1] if len(partes) > 1 else '0'
+                    texto = partes[2] if len(partes) > 2 else ''
+                    texto = texto.replace('\\n', '\n')
+                    payload = {'texto': texto, 'sessaoActiva': status_code == '1'}
+                    ussd_resp_buffer.append(payload)
+                    estado = 'SESSAO ACTIVA' if status_code == '1' else 'ENCERRADO'
+                    log('USSD', f'[{estado}] {texto[:60].replace(chr(10)," | ")}')
 
                 elif linha.startswith('STATUS|OK'):
                     sinal = 0
