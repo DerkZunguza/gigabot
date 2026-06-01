@@ -384,6 +384,91 @@ app.post('/api/ussd/fechar', (req, res) => {
   res.json({ success: true });
 });
 
+// ==================== TASK MANAGER ====================
+
+const dispositivosStatus = {
+  servidor:      { nome: 'Servidor',         estado: 'online',  ts: Date.now() },
+  mongodb:       { nome: 'MongoDB',           estado: 'online',  ts: Date.now() },
+  mqtt:          { nome: 'Broker MQTT',       estado: 'offline', ts: null },
+  whatsapp:      { nome: 'WhatsApp',          estado: 'offline', ts: null },
+  arduino:       { nome: 'Arduino + SIM900',  estado: 'offline', ts: null, sinal: 0 },
+  esp32:         { nome: 'ESP32 Bridge',      estado: 'offline', ts: null },
+  telegramAdmin: { nome: 'Telegram Admin',    estado: 'offline', ts: null },
+  telegramVendas:{ nome: 'Telegram Vendas',   estado: 'offline', ts: null },
+};
+
+function actualizarDispositivo(id, estado, extra = {}) {
+  dispositivosStatus[id] = {
+    ...dispositivosStatus[id],
+    estado,
+    ts: Date.now(),
+    ...extra
+  };
+}
+
+function getCPU() {
+  const cpus = require('os').cpus();
+  let idle = 0, total = 0;
+  cpus.forEach(c => {
+    for (const t in c.times) total += c.times[t];
+    idle += c.times.idle;
+  });
+  return Math.round((1 - idle / total) * 100);
+}
+
+function getRAM() {
+  const os = require('os');
+  const free  = os.freemem();
+  const total = os.totalmem();
+  return {
+    usadoMB: Math.round((total - free) / 1024 / 1024),
+    totalMB: Math.round(total / 1024 / 1024),
+    pct:     Math.round((1 - free / total) * 100)
+  };
+}
+
+app.get('/api/devices', (req, res) => {
+  actualizarDispositivo('mqtt',          mqtt.isConnected()         ? 'online' : 'offline');
+  actualizarDispositivo('whatsapp',      whatsapp.getStatus().status === 'connected' ? 'online' :
+                                         whatsapp.getStatus().status === 'qr'        ? 'qr'     : 'offline');
+  actualizarDispositivo('telegramAdmin', telegram.isActive()         ? 'online' : 'offline');
+  actualizarDispositivo('telegramVendas',telegramSales.isActive()    ? 'online' : 'offline');
+
+  const arduino = mqtt.getArduinoStatus();
+  if (arduino.ts && Date.now() - arduino.ts < 3 * 60 * 1000) {
+    actualizarDispositivo('arduino', arduino.connected ? 'online' : 'offline', {
+    sinal:    arduino.signal   || 0,
+    ramLivre: arduino.ramLivre || null,
+    ramTotal: arduino.ramTotal || 2048,
+    ramPct:   arduino.ramPct   || null
+  });
+    // ESP32 inferido — se Arduino responde, ESP32 esta a comunicar
+    if (arduino.connected) actualizarDispositivo('esp32', 'online');
+  }
+
+  const lista = Object.entries(dispositivosStatus).map(([id, d]) => ({
+    id,
+    nome:   d.nome,
+    estado: d.estado,
+    sinal:  d.sinal || null,
+    ts:     d.ts,
+    tempoAtras: d.ts ? Math.round((Date.now() - d.ts) / 1000) : null
+  }));
+
+  const ram = getRAM();
+  res.json({
+    devices: lista,
+    recursos: {
+      cpu:      getCPU(),
+      ramUsado: ram.usadoMB,
+      ramTotal: ram.totalMB,
+      ramPct:   ram.pct,
+      uptime:   Math.round(require('os').uptime() / 3600),
+      processo: Math.round(process.memoryUsage().rss / 1024 / 1024)
+    }
+  });
+});
+
 // ==================== SSE EVENTOS ====================
 
 app.get('/api/events', (req, res) => {

@@ -717,6 +717,75 @@ function conectarSSE() {
   sse.onerror = () => setTimeout(conectarSSE, 5000);
 }
 
+// ── TASK MANAGER ──────────────────────────────────────────────
+
+const ESTADO_DOT = { online: 'td-online', offline: 'td-offline', qr: 'td-qr', warn: 'td-warn' };
+const ESTADO_LABEL = { online: 'Online', offline: 'Offline', qr: 'QR Code', warn: 'Aviso' };
+
+async function loadDevices() {
+  const data = await api('/devices');
+  if (!data?.devices) return;
+
+  const list    = document.getElementById('taskman-list');
+  const badge   = document.getElementById('taskman-offline-count');
+  const offline = data.devices.filter(d => d.estado === 'offline').length;
+
+  badge.textContent = offline;
+  offline > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden');
+
+  const r = data.recursos;
+  const recursos = r ? `
+    <div class="taskman-recursos">
+      <div class="tr-item">
+        <span>CPU</span>
+        <div class="tr-bar"><div class="tr-fill ${r.cpu > 80 ? 'tr-red' : r.cpu > 50 ? 'tr-yellow' : 'tr-green'}" style="width:${r.cpu}%"></div></div>
+        <span>${r.cpu}%</span>
+      </div>
+      <div class="tr-item">
+        <span>RAM</span>
+        <div class="tr-bar"><div class="tr-fill ${r.ramPct > 80 ? 'tr-red' : r.ramPct > 60 ? 'tr-yellow' : 'tr-green'}" style="width:${r.ramPct}%"></div></div>
+        <span>${r.ramUsado}/${r.ramTotal}MB</span>
+      </div>
+      <div class="tr-item"><span>Node.js</span><span>${r.processo}MB</span></div>
+      <div class="tr-item"><span>Uptime</span><span>${r.uptime}h</span></div>
+    </div>` : '';
+
+  // RAM do Arduino (se disponivel)
+  const arduino = data.devices.find(d => d.id === 'arduino');
+  const ramArduino = arduino?.ramLivre != null ? `
+    <div class="taskman-recursos" style="border-top:1px solid var(--border);margin-top:0;border-bottom:none;padding-top:6px">
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px;font-weight:600">ARDUINO UNO</div>
+      <div class="tr-item">
+        <span>SRAM</span>
+        <div class="tr-bar"><div class="tr-fill ${arduino.ramPct > 80 ? 'tr-red' : arduino.ramPct > 60 ? 'tr-yellow' : 'tr-green'}" style="width:${arduino.ramPct}%"></div></div>
+        <span>${arduino.ramLivre}/${arduino.ramTotal}B</span>
+      </div>
+      <div class="tr-item"><span>Sinal</span><span>${arduino.sinal}/31</span></div>
+    </div>` : '';
+
+  list.innerHTML = recursos + ramArduino + data.devices.map(d => {
+    const dot   = ESTADO_DOT[d.estado]   || 'td-offline';
+    const label = ESTADO_LABEL[d.estado] || d.estado;
+    let info = d.ts ? `${Math.min(d.tempoAtras, 999)}s` : '-';
+    if (d.estado === 'online' && d.sinal != null) info = `Sig ${d.sinal}/31`;
+    if (d.id === 'arduino' && d.ramLivre != null) {
+      info = `Sig ${d.sinal}/31 · RAM ${d.ramLivre}B`;
+    }
+    return `<div class="taskman-row">
+      <span class="taskman-dot ${dot}"></span>
+      <span class="taskman-name">${d.nome}</span>
+      <span class="taskman-info">${label} · ${info}</span>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('taskman-toggle').addEventListener('click', () => {
+  document.getElementById('taskman').classList.toggle('hidden');
+});
+document.getElementById('taskman-close').addEventListener('click', () => {
+  document.getElementById('taskman').classList.add('hidden');
+});
+
 // ── INIT ──────────────────────────────────────────────
 
 checkStatus();
@@ -725,6 +794,8 @@ loadStats();
 loadPedidos();
 conectarSSE();
 
+loadDevices();
+setInterval(loadDevices,   5000);
 setInterval(checkStatus,   4000);
 setInterval(checkHardware, 10000);
 setInterval(loadStats,     30000);

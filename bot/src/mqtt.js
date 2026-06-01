@@ -44,7 +44,7 @@ function connectMQTT() {
           break;
         case 'status/arduino': {
           const anterior = arduinoStatus.connected;
-          arduinoStatus = { ...data, ts: Date.now() };
+          arduinoStatus = { ...data, ts: Date.now(), ramLivre: data.ramLivre, ramTotal: data.ramTotal, ramPct: data.ramPct };
           if (data.connected !== anterior) {
             events.notif.arduino(data.connected ? 'online' : 'offline', data.signal || 0);
           }
