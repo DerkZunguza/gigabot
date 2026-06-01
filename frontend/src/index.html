@@ -61,6 +61,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Admin
         </a>
+        <a class="nav-link" data-section="taskmanager" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Task Manager
+        </a>
         <a class="nav-link" data-section="logs" href="#">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           Registos
@@ -497,6 +501,93 @@
             </div>
             <button id="send-wa-btn" class="btn btn-primary">Enviar Mensagem</button>
           </div>
+        </div>
+      </section>
+
+      <!-- TASK MANAGER -->
+      <section class="section" id="sec-taskmanager">
+
+        <div class="tm-grid">
+
+          <!-- SERVIDOR -->
+          <div class="card tm-card">
+            <div class="card-head"><h2>Servidor</h2><button id="tm-refresh" class="btn btn-ghost btn-sm">Actualizar</button></div>
+            <div class="tm-stat-row">
+              <span class="tm-label">CPU</span>
+              <div class="tm-bar-wrap"><div id="tm-cpu-bar" class="tm-bar"></div></div>
+              <span id="tm-cpu-val" class="tm-val">--%</span>
+            </div>
+            <div class="tm-stat-row">
+              <span class="tm-label">RAM</span>
+              <div class="tm-bar-wrap"><div id="tm-ram-bar" class="tm-bar"></div></div>
+              <span id="tm-ram-val" class="tm-val">-- MB</span>
+            </div>
+            <div class="tm-stat-row">
+              <span class="tm-label">Disco</span>
+              <div class="tm-bar-wrap"><div id="tm-disk-bar" class="tm-bar"></div></div>
+              <span id="tm-disk-val" class="tm-val">-- GB</span>
+            </div>
+            <div class="tm-details" id="tm-server-details"></div>
+          </div>
+
+          <!-- PROCESSO NODE.JS -->
+          <div class="card tm-card">
+            <div class="card-head"><h2>Processo Node.js</h2></div>
+            <div class="tm-stat-row">
+              <span class="tm-label">Heap</span>
+              <div class="tm-bar-wrap"><div id="tm-heap-bar" class="tm-bar"></div></div>
+              <span id="tm-heap-val" class="tm-val">-- MB</span>
+            </div>
+            <div class="tm-details" id="tm-node-details"></div>
+          </div>
+
+          <!-- ERROS E ALERTAS -->
+          <div class="card tm-card">
+            <div class="card-head"><h2>Erros e Alertas</h2></div>
+            <div class="tm-erros" id="tm-erros"></div>
+          </div>
+
+          <!-- DISPOSITIVOS -->
+          <div class="card tm-card">
+            <div class="card-head"><h2>Dispositivos</h2></div>
+            <div id="tm-devices-list" class="tm-devices"></div>
+          </div>
+
+          <!-- SIM900 -->
+          <div class="card tm-card">
+            <div class="card-head">
+              <h2>SIM900 / GSM</h2>
+              <button id="tm-diagnose-btn" class="btn btn-ghost btn-sm">Diagnostico</button>
+            </div>
+            <div id="tm-sim900-content">
+              <div class="muted-text">A aguardar diagnostico... (corre automaticamente a cada 10 min)</div>
+            </div>
+          </div>
+
+          <!-- ESP32 -->
+          <div class="card tm-card">
+            <div class="card-head"><h2>ESP32 WROOM-32</h2></div>
+            <div class="tm-stat-row">
+              <span class="tm-label">Heap</span>
+              <div class="tm-bar-wrap"><div id="tm-esp-bar" class="tm-bar"></div></div>
+              <span id="tm-esp-val" class="tm-val">-- KB</span>
+            </div>
+            <div class="tm-details" id="tm-esp-details">
+              <div class="muted-text">A aguardar dados do ESP32...</div>
+            </div>
+          </div>
+
+          <!-- ARDUINO UNO -->
+          <div class="card tm-card">
+            <div class="card-head"><h2>Arduino Uno</h2></div>
+            <div class="tm-stat-row">
+              <span class="tm-label">SRAM</span>
+              <div class="tm-bar-wrap"><div id="tm-ard-bar" class="tm-bar"></div></div>
+              <span id="tm-ard-val" class="tm-val">-- B</span>
+            </div>
+            <div class="tm-details" id="tm-arduino-details"></div>
+          </div>
+
         </div>
       </section>
 

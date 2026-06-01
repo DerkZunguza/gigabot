@@ -705,6 +705,87 @@ tr:hover td { background: var(--surface2); }
 }
 .ussd-quick:hover { border-color: var(--accent); }
 
+/* ── TASK MANAGER SECTION ─────────────────────────────────────── */
+
+.tm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 700px) { .tm-grid { grid-template-columns: 1fr; } }
+
+.tm-card { }
+
+.tm-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.tm-label { font-size: .75rem; color: var(--muted); width: 40px; flex-shrink: 0; }
+.tm-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: var(--surface2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.tm-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .6s ease, background .3s;
+  width: 0%;
+}
+.tm-bar.ok     { background: var(--green); }
+.tm-bar.warn   { background: var(--yellow); }
+.tm-bar.danger { background: var(--red); }
+.tm-val { font-size: .75rem; color: var(--text); font-weight: 600; width: 70px; text-align: right; flex-shrink: 0; }
+
+.tm-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  margin-top: 6px;
+}
+.tm-detail-item { font-size: .72rem; }
+.tm-detail-key  { color: var(--muted); }
+.tm-detail-val  { color: var(--text); font-weight: 500; }
+
+.tm-erros { display: flex; flex-direction: column; gap: 6px; }
+.tm-erro-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: .78rem;
+}
+.tm-erro-item.error  { background: rgba(242,85,85,.08); border-left: 3px solid var(--red); }
+.tm-erro-item.warn   { background: rgba(245,185,66,.08); border-left: 3px solid var(--yellow); }
+.tm-erro-item.ok     { background: rgba(34,211,160,.08); border-left: 3px solid var(--green); }
+.tm-erro-num  { font-size: 1.4rem; font-weight: 700; flex-shrink: 0; }
+.tm-erro-info { flex: 1; }
+.tm-erro-label{ font-weight: 600; }
+.tm-erro-desc { color: var(--muted); font-size: .72rem; margin-top: 2px; }
+
+.tm-devices { display: flex; flex-direction: column; gap: 0; }
+.tm-dev-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .8rem;
+}
+.tm-dev-row:last-child { border-bottom: none; }
+.tm-dev-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tm-dev-name { flex: 1; }
+.tm-dev-status { font-size: .72rem; font-weight: 600; }
+.tm-dev-status.online  { color: var(--green); }
+.tm-dev-status.offline { color: var(--red); }
+.tm-dev-status.qr      { color: var(--yellow); }
+
 /* ── TASK MANAGER ─────────────────────────────────────── */
 
 .taskman-toggle {

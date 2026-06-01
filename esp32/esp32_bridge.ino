@@ -212,12 +212,18 @@ void processarLinha(String linha) {
     int sinal  = idxSig  >= 0 ? linha.substring(idxSig  + 7).toInt() : 0;
     int ram    = idxRam  >= 0 ? linha.substring(idxRam  + 4).toInt() : 0;
     int ramT   = idxRamT >= 0 ? linha.substring(idxRamT + 9).toInt() : 2048;
-    StaticJsonDocument<192> doc;
+    StaticJsonDocument<256> doc;
     doc["connected"]  = true;
     doc["signal"]     = sinal;
     doc["ramLivre"]   = ram;
     doc["ramTotal"]   = ramT;
     doc["ramPct"]     = ramT > 0 ? (int)((float)(ramT - ram) / ramT * 100) : 0;
+    // Dados do proprio ESP32
+    doc["espHeapLivre"] = (int)ESP.getFreeHeap();
+    doc["espHeapTotal"] = (int)ESP.getHeapSize();
+    doc["espWifiRSSI"]  = WiFi.RSSI();
+    doc["espWifiSSID"]  = WiFi.SSID();
+    doc["espUptime"]    = (unsigned long)(millis() / 1000);
     publicarJson("status/arduino", doc);
   }
   else if (linha.startsWith("USSD_CLOSED|")) {

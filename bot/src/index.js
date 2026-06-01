@@ -384,6 +384,63 @@ app.post('/api/ussd/fechar', (req, res) => {
   res.json({ success: true });
 });
 
+// ==================== SISTEMA STATS ====================
+
+app.get('/api/sistema', async (req, res) => {
+  const os   = require('os');
+  const { execSync } = require('child_process');
+
+  // CPU
+  const cpus   = os.cpus();
+  let idle = 0, total = 0;
+  cpus.forEach(c => { for (const t in c.times) total += c.times[t]; idle += c.times.idle; });
+  const cpu = Math.round((1 - idle / total) * 100);
+
+  // RAM
+  const ramTotal = Math.round(os.totalmem() / 1024 / 1024);
+  const ramLivre = Math.round(os.freemem()  / 1024 / 1024);
+  const ramUsado = ramTotal - ramLivre;
+
+  // Disco
+  let disco = { total: '?', usado: '?', livre: '?', pct: 0 };
+  try {
+    const df = execSync('df -m / 2>/dev/null').toString().split('\n')[1].split(/\s+/);
+    disco = {
+      total: Math.round(df[1] / 1024) + 'GB',
+      usado: Math.round(df[2] / 1024) + 'GB',
+      livre: Math.round(df[3] / 1024) + 'GB',
+      pct:   parseInt(df[4])
+    };
+  } catch (_) {}
+
+  // Erros dos logs
+  const { getLogs } = require('./logger');
+  const logs    = getLogs(500);
+  const erros   = logs.filter(l => l.level === 'ERROR').length;
+  const avisos  = logs.filter(l => l.level === 'WARN').length;
+  const ultErro = logs.find(l => l.level === 'ERROR');
+
+  // Uptime
+  const uptimeSrv = Math.round(os.uptime() / 3600);
+  const uptimeProc= Math.round(process.uptime() / 3600);
+
+  // Processo Node
+  const mem = process.memoryUsage();
+
+  res.json({
+    cpu,
+    ram: { usado: ramUsado, total: ramTotal, livre: ramLivre, pct: Math.round(ramUsado/ramTotal*100) },
+    disco,
+    uptime: { servidor: uptimeSrv, processo: uptimeProc },
+    processo: {
+      rss:      Math.round(mem.rss      / 1024 / 1024),
+      heap:     Math.round(mem.heapUsed / 1024 / 1024),
+      heapTotal:Math.round(mem.heapTotal/ 1024 / 1024)
+    },
+    logs: { erros, avisos, ultimoErro: ultErro ? ultErro.message.substring(0, 80) : null, ultimoErroTs: ultErro?.ts }
+  });
+});
+
 // ==================== TASK MANAGER ====================
 
 const dispositivosStatus = {
@@ -442,6 +499,15 @@ app.get('/api/devices', (req, res) => {
     ramTotal: arduino.ramTotal || 2048,
     ramPct:   arduino.ramPct   || null
   });
+  if (arduino.connected) {
+    actualizarDispositivo('esp32', 'online', {
+      heapLivre: arduino.espHeapLivre || null,
+      heapTotal: arduino.espHeapTotal || null,
+      wifiRSSI:  arduino.espWifiRSSI  || null,
+      wifiSSID:  arduino.espWifiSSID  || null,
+      uptime:    arduino.espUptime    || null
+    });
+  }
     // ESP32 inferido — se Arduino responde, ESP32 esta a comunicar
     if (arduino.connected) actualizarDispositivo('esp32', 'online');
   }
@@ -456,8 +522,18 @@ app.get('/api/devices', (req, res) => {
   }));
 
   const ram = getRAM();
+  const sim = mqtt.getSim900Status();
   res.json({
     devices: lista,
+    sim900: sim.ts ? {
+      ping:      sim.ping,
+      simCard:   sim.sim,
+      sinal:     sim.signal,
+      rede:      sim.rede,
+      operadora: sim.operadora,
+      ts:        sim.ts,
+      idadeMin:  Math.round((Date.now() - sim.ts) / 60000)
+    } : null,
     recursos: {
       cpu:      getCPU(),
       ramUsado: ram.usadoMB,

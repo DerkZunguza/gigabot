@@ -6,6 +6,7 @@ const events = require('./events');
 
 let client = null;
 let arduinoStatus = { connected: false, signal: 0, ts: null };
+let sim900Status  = { ts: null };
 
 function buildBrokerUrl() {
   const broker = process.env.MQTT_BROKER || 'mosquitto';
@@ -30,6 +31,7 @@ function connectMQTT() {
     client.subscribe('ussd/resultado');
     client.subscribe('at/resultado');
     client.subscribe('sms/resultado');
+    client.subscribe('diagnostico/arduino');
   });
 
   client.on('message', async (topic, message) => {
@@ -42,9 +44,24 @@ function connectMQTT() {
         case 'mb/confirmacao':
           await handleActivationConfirmation(data);
           break;
+        case 'diagnostico/arduino':
+          sim900Status = { ...data, ts: Date.now() };
+          break;
+
         case 'status/arduino': {
           const anterior = arduinoStatus.connected;
-          arduinoStatus = { ...data, ts: Date.now(), ramLivre: data.ramLivre, ramTotal: data.ramTotal, ramPct: data.ramPct };
+          arduinoStatus = {
+            ...data,
+            ts: Date.now(),
+            ramLivre:    data.ramLivre,
+            ramTotal:    data.ramTotal,
+            ramPct:      data.ramPct,
+            espHeapLivre: data.espHeapLivre,
+            espHeapTotal: data.espHeapTotal,
+            espWifiRSSI:  data.espWifiRSSI,
+            espWifiSSID:  data.espWifiSSID,
+            espUptime:    data.espUptime
+          };
           if (data.connected !== anterior) {
             events.notif.arduino(data.connected ? 'online' : 'offline', data.signal || 0);
           }
@@ -171,6 +188,8 @@ function publish(topic, message) {
   }
 }
 
+function getSim900Status() { return sim900Status; }
+
 function isConnected() {
   return !!(client && client.connected);
 }
@@ -212,5 +231,6 @@ module.exports = {
   getArduinoStatus,
   executarUSSD,
   executarAT,
-  registerUssdRequest
+  registerUssdRequest,
+  getSim900Status
 };

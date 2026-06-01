@@ -307,6 +307,7 @@ document.getElementById('at-sms-send').addEventListener('click', async () => {
 });
 
 const TITLES = {
+  taskmanager: 'Task Manager',
   admin:     'Admin — Sessoes e SMS',
   at:        'Console AT — SIM900',
   send:      'Enviar Mensagem WhatsApp',
@@ -333,7 +334,8 @@ navLinks.forEach(link => {
     document.querySelector('.sidebar').classList.remove('open');
     if (sec === 'pedidos')  loadAllPedidos();
     if (sec === 'sms')      loadSMS();
-    if (sec === 'admin')    loadSessions();
+    if (sec === 'admin')       loadSessions();
+    if (sec === 'taskmanager') { loadTaskManager(); loadDevices(); }
     if (sec === 'at') {
       atAppend('Console AT pronto. Arduino: ' + (document.getElementById('hw-arduino')?.textContent || '--'), 'info');
     }
@@ -716,6 +718,157 @@ function conectarSSE() {
   };
   sse.onerror = () => setTimeout(conectarSSE, 5000);
 }
+
+// ── TASK MANAGER SECTION ──────────────────────────────────────────
+
+function tmBar(id, pct) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.width = pct + '%';
+  el.className = 'tm-bar ' + (pct > 85 ? 'danger' : pct > 60 ? 'warn' : 'ok');
+}
+
+async function loadTaskManager() {
+  const [sis, dev] = await Promise.all([api('/sistema'), api('/devices')]);
+
+  if (sis) {
+    // CPU
+    tmBar('tm-cpu-bar', sis.cpu);
+    document.getElementById('tm-cpu-val').textContent = sis.cpu + '%';
+
+    // RAM
+    tmBar('tm-ram-bar', sis.ram.pct);
+    document.getElementById('tm-ram-val').textContent = `${sis.ram.usado}/${sis.ram.total} MB`;
+
+    // Disco
+    tmBar('tm-disk-bar', sis.disco.pct || 0);
+    document.getElementById('tm-disk-val').textContent = `${sis.disco.usado}/${sis.disco.total}`;
+
+    document.getElementById('tm-server-details').innerHTML = `
+      <div class="tm-detail-item"><div class="tm-detail-key">RAM livre</div><div class="tm-detail-val">${sis.ram.livre} MB</div></div>
+      <div class="tm-detail-item"><div class="tm-detail-key">Disco livre</div><div class="tm-detail-val">${sis.disco.livre}</div></div>
+      <div class="tm-detail-item"><div class="tm-detail-key">Uptime srv</div><div class="tm-detail-val">${sis.uptime.servidor}h</div></div>
+      <div class="tm-detail-item"><div class="tm-detail-key">Uptime proc</div><div class="tm-detail-val">${sis.uptime.processo}h</div></div>`;
+
+    // Node.js
+    const heapPct = Math.round(sis.processo.heap / sis.processo.heapTotal * 100);
+    tmBar('tm-heap-bar', heapPct);
+    document.getElementById('tm-heap-val').textContent = `${sis.processo.heap}/${sis.processo.heapTotal} MB`;
+    document.getElementById('tm-node-details').innerHTML = `
+      <div class="tm-detail-item"><div class="tm-detail-key">RSS total</div><div class="tm-detail-val">${sis.processo.rss} MB</div></div>
+      <div class="tm-detail-item"><div class="tm-detail-key">Heap usado</div><div class="tm-detail-val">${sis.processo.heap} MB</div></div>`;
+
+    // Erros
+    const l = sis.logs;
+    document.getElementById('tm-erros').innerHTML = `
+      <div class="tm-erro-item ${l.erros > 0 ? 'error' : 'ok'}">
+        <span class="tm-erro-num" style="color:${l.erros > 0 ? 'var(--red)' : 'var(--green)'}">${l.erros}</span>
+        <div class="tm-erro-info">
+          <div class="tm-erro-label">Erros</div>
+          <div class="tm-erro-desc">${l.ultimoErro || 'Nenhum erro registado'}</div>
+        </div>
+      </div>
+      <div class="tm-erro-item ${l.avisos > 0 ? 'warn' : 'ok'}">
+        <span class="tm-erro-num" style="color:${l.avisos > 0 ? 'var(--yellow)' : 'var(--green)'}">${l.avisos}</span>
+        <div class="tm-erro-info">
+          <div class="tm-erro-label">Avisos</div>
+          <div class="tm-erro-desc">${l.ultimoErroTs ? new Date(l.ultimoErroTs).toLocaleTimeString('pt') : 'Sem avisos recentes'}</div>
+        </div>
+      </div>`;
+  }
+
+  if (dev?.devices) {
+    // Dispositivos
+    const DOT_COLOR = { online: 'var(--green)', offline: 'var(--red)', qr: 'var(--yellow)' };
+    document.getElementById('tm-devices-list').innerHTML = dev.devices.map(d => `
+      <div class="tm-dev-row">
+        <span class="tm-dev-dot" style="background:${DOT_COLOR[d.estado] || 'var(--muted)'}"></span>
+        <span class="tm-dev-name">${d.nome}</span>
+        <span class="tm-dev-status ${d.estado}">${ESTADO_LABEL[d.estado] || d.estado}</span>
+      </div>`).join('');
+
+    // SIM900
+    if (dev.sim900) {
+      const s = dev.sim900;
+      const REDE_CLS = { REGISTADO: 'online', A_PROCURAR: 'qr', NAO_REGISTADO: 'offline', DESCONHECIDO: 'offline' };
+      const cls = REDE_CLS[s.rede] || 'offline';
+      document.getElementById('tm-sim900-content').innerHTML = `
+        <div class="tm-devices">
+          <div class="tm-dev-row">
+            <span class="tm-dev-dot" style="background:${s.simCard === 'OK' ? 'var(--green)' : 'var(--red)'}"></span>
+            <span class="tm-dev-name">SIM Card</span>
+            <span class="tm-dev-status ${s.simCard === 'OK' ? 'online' : 'offline'}">${s.simCard === 'OK' ? 'Inserido' : 'Ausente'}</span>
+          </div>
+          <div class="tm-dev-row">
+            <span class="tm-dev-dot" style="background:${cls === 'online' ? 'var(--green)' : 'var(--yellow)'}"></span>
+            <span class="tm-dev-name">Rede</span>
+            <span class="tm-dev-status ${cls}">${s.rede}</span>
+          </div>
+          <div class="tm-dev-row">
+            <span class="tm-dev-dot" style="background:var(--accent)"></span>
+            <span class="tm-dev-name">Operadora</span>
+            <span class="tm-dev-status" style="color:var(--text)">${s.operadora}</span>
+          </div>
+          <div class="tm-dev-row">
+            <span class="tm-dev-dot" style="background:${s.sinal > 15 ? 'var(--green)' : s.sinal > 5 ? 'var(--yellow)' : 'var(--red)'}"></span>
+            <span class="tm-dev-name">Sinal GSM</span>
+            <span class="tm-dev-status" style="color:var(--text)">${s.sinal}/31</span>
+          </div>
+        </div>
+        <div class="muted-text" style="margin-top:8px;font-size:.72rem">Actualizado: ${s.idadeMin === 0 ? 'agora' : s.idadeMin + ' min atras'}</div>`;
+    }
+
+    // ESP32
+    const esp = dev.devices.find(d => d.id === 'esp32');
+    if (esp?.heapLivre != null) {
+      const heapPct = Math.round((1 - esp.heapLivre / esp.heapTotal) * 100);
+      tmBar('tm-esp-bar', heapPct);
+      document.getElementById('tm-esp-val').textContent =
+        `${Math.round(esp.heapLivre/1024)}/${Math.round(esp.heapTotal/1024)} KB`;
+      const rssiPct = esp.wifiRSSI ? Math.max(0, Math.min(100, (esp.wifiRSSI + 100) * 2)) : 0;
+      const rssiLabel = esp.wifiRSSI > -50 ? 'Excelente' : esp.wifiRSSI > -70 ? 'Bom' : 'Fraco';
+      document.getElementById('tm-esp-details').innerHTML = `
+        <div class="tm-detail-item"><div class="tm-detail-key">WiFi SSID</div><div class="tm-detail-val">${esp.wifiSSID || '--'}</div></div>
+        <div class="tm-detail-item"><div class="tm-detail-key">WiFi RSSI</div><div class="tm-detail-val">${esp.wifiRSSI || '--'} dBm (${rssiLabel})</div></div>
+        <div class="tm-detail-item"><div class="tm-detail-key">Heap livre</div><div class="tm-detail-val">${Math.round(esp.heapLivre/1024)} KB</div></div>
+        <div class="tm-detail-item"><div class="tm-detail-key">Uptime</div><div class="tm-detail-val">${esp.uptime ? Math.round(esp.uptime/60) + 'min' : '--'}</div></div>`;
+    } else {
+      document.getElementById('tm-esp-details').innerHTML =
+        '<div class="muted-text">ESP32 nao conectado ou firmware desactualizado</div>';
+    }
+
+    // Arduino
+    const ard = dev.devices.find(d => d.id === 'arduino');
+    if (ard?.ramLivre != null) {
+      tmBar('tm-ard-bar', ard.ramPct);
+      document.getElementById('tm-ard-val').textContent = `${ard.ramLivre}/${ard.ramTotal} B`;
+      document.getElementById('tm-arduino-details').innerHTML = `
+        <div class="tm-detail-item"><div class="tm-detail-key">Sinal GSM</div><div class="tm-detail-val">${ard.sinal}/31</div></div>
+        <div class="tm-detail-item"><div class="tm-detail-key">SRAM livre</div><div class="tm-detail-val">${ard.ramLivre} B</div></div>
+        <div class="tm-detail-item"><div class="tm-detail-key">SRAM usada</div><div class="tm-detail-val">${ard.ramTotal - ard.ramLivre} B</div></div>
+        <div class="tm-detail-item"><div class="tm-detail-key">Total SRAM</div><div class="tm-detail-val">${ard.ramTotal} B</div></div>`;
+    } else {
+      document.getElementById('tm-arduino-details').innerHTML =
+        '<div class="muted-text">Arduino nao conectado ou firmware desactualizado</div>';
+    }
+  }
+}
+
+document.getElementById('tm-refresh').addEventListener('click', loadTaskManager);
+document.getElementById('tm-diagnose-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('tm-diagnose-btn');
+  btn.disabled = true;
+  btn.textContent = 'A executar...';
+  await api('/ussd/fechar', { method: 'POST' }); // fechar sessao aberta se houver
+  mqtt && await api('/at', { method: 'POST', body: JSON.stringify({ comando: 'AT+CSQ' }) });
+  // Pedir diagnostico via MQTT
+  await fetch('/api/events'); // trigger noop
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = 'Diagnostico';
+    loadTaskManager();
+  }, 12000);
+});
 
 // ── TASK MANAGER ──────────────────────────────────────────────
 
