@@ -13,6 +13,15 @@
   --yellow:    #f5b942;
   --red:       #f25555;
   --blue:      #38b6ff;
+  /* Task Manager cores por tipo */
+  --tm-cpu:  #4f6ef7;
+  --tm-mem:  #22d3a0;
+  --tm-disk: #f5b942;
+  --tm-node: #a78bfa;
+  --tm-dev:  #38b6ff;
+  --tm-ard:  #fb923c;
+  --tm-esp:  #34d399;
+  --tm-sim:  #f472b6;
   --sidebar-w: 220px;
   --topbar-h:  56px;
   --radius:    10px;
@@ -704,6 +713,177 @@ tr:hover td { background: var(--surface2); }
   transition: border-color .15s;
 }
 .ussd-quick:hover { border-color: var(--accent); }
+
+/* ── TASK MANAGER WINDOWS STYLE ─────────────────────────────────────── */
+
+.tm-wrap {
+  display: flex;
+  height: calc(100vh - var(--topbar-h) - 48px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* Sidebar com tabs */
+.tm-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  background: #0a0e1a;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+.tm-sidebar-title {
+  padding: 14px 16px 10px;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  border-bottom: 1px solid var(--border);
+}
+.tm-tabs { display: flex; flex-direction: column; padding: 6px 0; overflow-y: auto; flex: 1; }
+.tm-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background .1s;
+  border-left: 2px solid transparent;
+}
+.tm-tab:hover  { background: var(--surface2); }
+.tm-tab.active { background: rgba(79,110,247,.1); border-left-color: var(--accent); }
+.tm-tab-icon { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.tm-tab-name { font-size: .8rem; font-weight: 500; color: var(--text); }
+.tm-tab-val  { font-size: .7rem; color: var(--muted); margin-top: 1px; }
+
+/* Painel principal */
+.tm-main { flex: 1; overflow-y: auto; padding: 24px; }
+.tm-panel { display: none; animation: fadeIn .15s ease; }
+.tm-panel.active { display: block; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.tm-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.tm-panel-title { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+.tm-panel-sub   { font-size: .75rem; color: var(--muted); margin-top: 3px; }
+.tm-panel-big   { font-size: 2.2rem; font-weight: 700; color: var(--accent); }
+
+/* Grafico canvas */
+.tm-chart {
+  width: 100%;
+  height: 120px;
+  background: #050810;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  display: block;
+}
+
+/* Stats row */
+.tm-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.tm-stat {
+  flex: 1;
+  min-width: 100px;
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+}
+.tm-stat:last-child { border-right: none; }
+.tm-stat-label { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+.tm-stat-val   { font-size: .95rem; font-weight: 600; color: var(--text); }
+
+/* Disco */
+.tm-disk-visual { margin-bottom: 16px; }
+.tm-disk-bar-wrap {
+  height: 24px;
+  background: var(--surface2);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.tm-disk-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tm-disk), #f97316);
+  transition: width .6s ease;
+  border-radius: 4px;
+}
+
+/* Dispositivos grid */
+.tm-dev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.tm-dev-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tm-dev-card-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.tm-dev-card-dot.online  { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.tm-dev-card-dot.offline { background: var(--red); }
+.tm-dev-card-dot.qr      { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+.tm-dev-card-name   { font-size: .82rem; font-weight: 600; color: var(--text); }
+.tm-dev-card-status { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+
+/* SIM900 grid */
+.tm-sim-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.tm-sim-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+.tm-sim-label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+.tm-sim-val   { font-size: 1rem; font-weight: 700; }
+
+/* Erros */
+.tm-erros-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.tm-erros-item.err  { background: rgba(242,85,85,.07); border: 1px solid rgba(242,85,85,.2); }
+.tm-erros-item.warn { background: rgba(245,185,66,.07); border: 1px solid rgba(245,185,66,.2); }
+.tm-erros-item.ok   { background: rgba(34,211,160,.07); border: 1px solid rgba(34,211,160,.2); }
+.tm-erros-num  { font-size: 2rem; font-weight: 800; min-width: 48px; text-align: center; }
+.tm-erros-body { flex: 1; }
+.tm-erros-title{ font-weight: 600; font-size: .9rem; }
+.tm-erros-desc { font-size: .75rem; color: var(--muted); margin-top: 3px; }
+
+@media (max-width: 768px) {
+  .tm-wrap { flex-direction: column; height: auto; }
+  .tm-sidebar { width: 100%; }
+  .tm-tabs { flex-direction: row; flex-wrap: wrap; }
+  .tm-tab { flex: 0 0 auto; }
+}
 
 /* ── TASK MANAGER SECTION ─────────────────────────────────────── */
 

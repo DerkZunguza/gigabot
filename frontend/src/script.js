@@ -335,7 +335,8 @@ navLinks.forEach(link => {
     if (sec === 'pedidos')  loadAllPedidos();
     if (sec === 'sms')      loadSMS();
     if (sec === 'admin')       loadSessions();
-    if (sec === 'taskmanager') { loadTaskManager(); loadDevices(); }
+    if (sec === 'taskmanager') { loadTaskManager(); }
+    if (sec === 'taskmanager') loadDevices();
     if (sec === 'at') {
       atAppend('Console AT pronto. Arduino: ' + (document.getElementById('hw-arduino')?.textContent || '--'), 'info');
     }
@@ -719,6 +720,200 @@ function conectarSSE() {
   sse.onerror = () => setTimeout(conectarSSE, 5000);
 }
 
+// ── TASK MANAGER WINDOWS STYLE ──────────────────────────────────────────
+
+const TM_HISTORY = { cpu: [], mem: [], node: [], ard: [], esp: [] };
+const TM_MAX = 60;
+
+function tmPush(key, val) {
+  TM_HISTORY[key].push(val);
+  if (TM_HISTORY[key].length > TM_MAX) TM_HISTORY[key].shift();
+}
+
+function tmDrawChart(canvasId, data, color, max = 100) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth, H = canvas.offsetHeight || 120;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  // Grade
+  ctx.strokeStyle = 'rgba(255,255,255,.04)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = (H / 4) * i;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  if (data.length < 2) return;
+  const step = W / (TM_MAX - 1);
+
+  // Area preenchida
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, color + '60');
+  grad.addColorStop(1, color + '05');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  data.forEach((v, i) => {
+    const x = (TM_MAX - data.length + i) * step;
+    const y = H - (Math.min(v, max) / max) * H;
+    i === 0 ? ctx.lineTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo((TM_MAX - 1) * step, H);
+  ctx.closePath();
+  ctx.fill();
+
+  // Linha
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  data.forEach((v, i) => {
+    const x = (TM_MAX - data.length + i) * step;
+    const y = H - (Math.min(v, max) / max) * H;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Valor actual
+  const last = data[data.length - 1];
+  const lx = (TM_MAX - 1) * step;
+  const ly = H - (Math.min(last, max) / max) * H;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fill();
+}
+
+function tmSetTab(id) {
+  document.querySelectorAll('.tm-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tm-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tm-tab[data-tm="${id}"]`)?.classList.add('active');
+  document.getElementById(`tmp-${id}`)?.classList.add('active');
+}
+
+document.querySelectorAll('.tm-tab').forEach(btn => {
+  btn.addEventListener('click', () => tmSetTab(btn.dataset.tm));
+});
+
+async function loadTaskManager() {
+  const [sis, dev] = await Promise.all([api('/sistema'), api('/devices')]);
+  if (!sis || !dev) return;
+
+  const r = sis;
+  const arduino = dev.devices?.find(d => d.id === 'arduino');
+  const esp     = dev.devices?.find(d => d.id === 'esp32');
+
+  // ─ CPU
+  tmPush('cpu', r.cpu || 0);
+  document.getElementById('tm-cpu-pct').textContent = r.cpu + '%';
+  document.getElementById('tmt-cpu').textContent    = r.cpu + '%';
+  document.getElementById('tm-panel-big-cpu');
+  document.getElementById('tm-cpu-cores') && (document.getElementById('tm-cpu-cores').textContent = (require && window.os) ? '-' : navigator.hardwareConcurrency || '--');
+  document.getElementById('tm-cpu-up')    && (document.getElementById('tm-cpu-up').textContent    = r.uptime.servidor + 'h');
+  tmDrawChart('tm-chart-cpu', TM_HISTORY.cpu, getComputedStyle(document.documentElement).getPropertyValue('--tm-cpu').trim() || '#4f6ef7');
+
+  // ─ RAM
+  tmPush('mem', r.ram.pct || 0);
+  document.getElementById('tm-mem-pct').textContent   = r.ram.pct + '%';
+  document.getElementById('tmt-mem').textContent       = r.ram.usado + ' MB';
+  document.getElementById('tm-mem-used').textContent   = r.ram.usado + ' MB';
+  document.getElementById('tm-mem-free').textContent   = r.ram.livre + ' MB';
+  document.getElementById('tm-mem-total').textContent  = r.ram.total + ' MB';
+  tmDrawChart('tm-chart-mem', TM_HISTORY.mem, '#22d3a0');
+
+  // ─ Disco
+  const dp = r.disco.pct || 0;
+  document.getElementById('tm-disk-pct').textContent   = dp + '%';
+  document.getElementById('tmt-disk').textContent       = r.disco.usado || '--';
+  document.getElementById('tm-disk-used').textContent   = r.disco.usado || '--';
+  document.getElementById('tm-disk-free').textContent   = r.disco.livre || '--';
+  document.getElementById('tm-disk-total').textContent  = r.disco.total || '--';
+  const fill = document.getElementById('tm-disk-bar-fill');
+  if (fill) { fill.style.width = dp + '%'; fill.style.background = dp > 85 ? 'var(--red)' : dp > 65 ? 'var(--yellow)' : 'linear-gradient(90deg,var(--tm-disk),#f97316)'; }
+
+  // ─ Node.js
+  tmPush('node', r.processo.heap || 0);
+  document.getElementById('tm-node-heap').textContent   = r.processo.heap + ' MB';
+  document.getElementById('tmt-node').textContent        = r.processo.heap + ' MB';
+  document.getElementById('tm-node-rss').textContent     = r.processo.rss + ' MB';
+  document.getElementById('tm-node-hused').textContent   = r.processo.heap + ' MB';
+  document.getElementById('tm-node-htotal').textContent  = r.processo.heapTotal + ' MB';
+  document.getElementById('tm-node-up').textContent      = r.uptime.processo + 'h';
+  tmDrawChart('tm-chart-node', TM_HISTORY.node, '#a78bfa', r.processo.heapTotal || 100);
+
+  // ─ Dispositivos
+  const offlineCount = dev.devices?.filter(d => d.estado === 'offline').length || 0;
+  document.getElementById('tmt-dev').textContent = `${(dev.devices?.length || 0) - offlineCount}/${dev.devices?.length || 0} online`;
+  const devGrid = document.getElementById('tm-dev-list');
+  if (devGrid) {
+    devGrid.innerHTML = (dev.devices || []).map(d => `
+      <div class="tm-dev-card">
+        <span class="tm-dev-card-dot ${d.estado}"></span>
+        <div>
+          <div class="tm-dev-card-name">${d.nome}</div>
+          <div class="tm-dev-card-status">${ESTADO_LABEL[d.estado] || d.estado} · ${d.ts ? Math.min(d.tempoAtras, 999) + 's' : '--'}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ─ Arduino
+  if (arduino?.ramLivre != null) {
+    tmPush('ard', arduino.ramPct || 0);
+    document.getElementById('tm-ard-sram').textContent = arduino.ramLivre + ' B';
+    document.getElementById('tmt-ard').textContent     = 'Sig ' + arduino.sinal + '/31';
+    document.getElementById('tm-ard-stats').innerHTML  = `
+      <div class="tm-stat"><div class="tm-stat-label">SRAM livre</div><div class="tm-stat-val">${arduino.ramLivre} B</div></div>
+      <div class="tm-stat"><div class="tm-stat-label">SRAM usada</div><div class="tm-stat-val">${arduino.ramTotal - arduino.ramLivre} B</div></div>
+      <div class="tm-stat"><div class="tm-stat-label">SRAM total</div><div class="tm-stat-val">${arduino.ramTotal} B</div></div>
+      <div class="tm-stat"><div class="tm-stat-label">Sinal GSM</div><div class="tm-stat-val">${arduino.sinal}/31</div></div>`;
+    tmDrawChart('tm-chart-ard', TM_HISTORY.ard, '#fb923c');
+  }
+
+  // ─ ESP32
+  if (esp?.heapLivre != null) {
+    const heapPct = Math.round((1 - esp.heapLivre / esp.heapTotal) * 100);
+    tmPush('esp', heapPct);
+    const rssiLabel = !esp.wifiRSSI ? '--' : esp.wifiRSSI > -50 ? 'Excelente' : esp.wifiRSSI > -70 ? 'Bom' : 'Fraco';
+    document.getElementById('tm-esp-heap').textContent = Math.round(esp.heapLivre/1024) + ' KB';
+    document.getElementById('tmt-esp').textContent     = heapPct + '% heap';
+    document.getElementById('tm-esp-stats').innerHTML  = `
+      <div class="tm-stat"><div class="tm-stat-label">Heap livre</div><div class="tm-stat-val">${Math.round(esp.heapLivre/1024)} KB</div></div>
+      <div class="tm-stat"><div class="tm-stat-label">Heap total</div><div class="tm-stat-val">${Math.round(esp.heapTotal/1024)} KB</div></div>
+      <div class="tm-stat"><div class="tm-stat-label">WiFi</div><div class="tm-stat-val">${esp.wifiSSID || '--'}</div></div>
+      <div class="tm-stat"><div class="tm-stat-label">RSSI</div><div class="tm-stat-val">${esp.wifiRSSI || '--'} dBm (${rssiLabel})</div></div>
+      <div class="tm-stat"><div class="tm-stat-label">Uptime</div><div class="tm-stat-val">${esp.uptime ? Math.round(esp.uptime/60) + ' min' : '--'}</div></div>`;
+    tmDrawChart('tm-chart-esp', TM_HISTORY.esp, '#34d399');
+  }
+
+  // ─ SIM900
+  if (dev.sim900) {
+    const s = dev.sim900;
+    const sigCls = s.sinal > 15 ? 'var(--green)' : s.sinal > 5 ? 'var(--yellow)' : 'var(--red)';
+    document.getElementById('tm-sim-sinal').textContent = s.sinal + '/31';
+    document.getElementById('tm-sim-sinal').style.color = sigCls;
+    document.getElementById('tmt-sim').textContent      = s.operadora || '--';
+    document.getElementById('tm-sim-items').innerHTML   = `
+      <div class="tm-sim-item"><div class="tm-sim-label">SIM Card</div><div class="tm-sim-val" style="color:${s.simCard === 'OK' ? 'var(--green)' : 'var(--red)'}">${s.simCard === 'OK' ? 'Inserido' : 'Ausente'}</div></div>
+      <div class="tm-sim-item"><div class="tm-sim-label">Rede</div><div class="tm-sim-val" style="color:${s.rede === 'REGISTADO' ? 'var(--green)' : 'var(--yellow)'}">${s.rede}</div></div>
+      <div class="tm-sim-item"><div class="tm-sim-label">Operadora</div><div class="tm-sim-val" style="color:var(--text)">${s.operadora}</div></div>
+      <div class="tm-sim-item"><div class="tm-sim-label">Sinal</div><div class="tm-sim-val" style="color:${sigCls}">${s.sinal}/31</div></div>
+      <div class="tm-sim-item" style="grid-column:1/-1"><div class="tm-sim-label">Ultimo diagnostico</div><div class="tm-sim-val" style="color:var(--muted);font-size:.8rem">${s.idadeMin === 0 ? 'Agora' : s.idadeMin + ' minutos atras'}</div></div>`;
+  }
+
+  // ─ Erros
+  const lg = r.logs;
+  document.getElementById('tmt-err').textContent = lg.erros;
+  document.getElementById('tm-erros-content').innerHTML = `
+    <div class="tm-erros-item ${lg.erros > 0 ? 'err' : 'ok'}">
+      <div class="tm-erros-num" style="color:${lg.erros > 0 ? 'var(--red)' : 'var(--green)'}">${lg.erros}</div>
+      <div class="tm-erros-body"><div class="tm-erros-title">Erros</div><div class="tm-erros-desc">${lg.ultimoErro || 'Nenhum erro registado'}</div></div>
+    </div>
+    <div class="tm-erros-item ${lg.avisos > 0 ? 'warn' : 'ok'}">
+      <div class="tm-erros-num" style="color:${lg.avisos > 0 ? 'var(--yellow)' : 'var(--green)'}">${lg.avisos}</div>
+      <div class="tm-erros-body"><div class="tm-erros-title">Avisos</div><div class="tm-erros-desc">${lg.ultimoErroTs ? 'Ultimo: ' + new Date(lg.ultimoErroTs).toLocaleTimeString('pt') : 'Sem avisos recentes'}</div></div>
+    </div>`;
+}
+
 // ── TASK MANAGER SECTION ──────────────────────────────────────────
 
 function tmBar(id, pct) {
@@ -948,7 +1143,10 @@ loadPedidos();
 conectarSSE();
 
 loadDevices();
-setInterval(loadDevices,   5000);
+setInterval(loadDevices, 5000);
+setInterval(() => {
+  if (document.getElementById('sec-taskmanager').classList.contains('active')) loadTaskManager();
+}, 3000);
 setInterval(checkStatus,   4000);
 setInterval(checkHardware, 10000);
 setInterval(loadStats,     30000);

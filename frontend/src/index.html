@@ -25,6 +25,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           Visao Geral
         </a>
+        <a class="nav-link" data-section="taskmanager" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Task Manager
+        </a>
         <a class="nav-link" data-section="whatsapp" href="#">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           WhatsApp
@@ -61,12 +65,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Admin
         </a>
-        <a class="nav-link" data-section="taskmanager" href="#">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          Task Manager
-        </a>
         <a class="nav-link" data-section="logs" href="#">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           Registos
         </a>
         <a class="nav-link" data-section="settings" href="#">
@@ -76,29 +76,16 @@
       </nav>
 
       <div class="sidebar-status">
-        <div class="sys-row">
-          <span class="sys-label">WhatsApp</span>
-          <span id="side-wa" class="dot dot-red"></span>
-        </div>
-        <div class="sys-row">
-          <span class="sys-label">MQTT</span>
-          <span id="side-mqtt" class="dot dot-red"></span>
-        </div>
-        <div class="sys-row">
-          <span class="sys-label">Telegram Admin</span>
-          <span id="side-tg" class="dot dot-red"></span>
-        </div>
-        <div class="sys-row">
-          <span class="sys-label">Telegram Vendas</span>
-          <span id="side-tgs" class="dot dot-red"></span>
-        </div>
+        <div class="sys-row"><span class="sys-label">WhatsApp</span><span id="side-wa" class="dot dot-red"></span></div>
+        <div class="sys-row"><span class="sys-label">MQTT</span><span id="side-mqtt" class="dot dot-red"></span></div>
+        <div class="sys-row"><span class="sys-label">Telegram Admin</span><span id="side-tg" class="dot dot-red"></span></div>
+        <div class="sys-row"><span class="sys-label">Telegram Vendas</span><span id="side-tgs" class="dot dot-red"></span></div>
       </div>
     </aside>
 
     <!-- MAIN -->
     <div class="content">
 
-      <!-- TOPBAR -->
       <header class="topbar">
         <button class="menu-toggle" id="menu-toggle">&#9776;</button>
         <div class="topbar-title" id="page-title">Visao Geral</div>
@@ -107,567 +94,339 @@
         </div>
       </header>
 
-      <!-- SECTIONS -->
+      <!-- TASK MANAGER estilo Windows -->
+      <section class="section" id="sec-taskmanager">
+        <div class="tm-wrap">
+          <!-- Sidebar de tabs -->
+          <div class="tm-sidebar">
+            <div class="tm-sidebar-title">Task Manager</div>
+            <nav class="tm-tabs">
+              <button class="tm-tab active" data-tm="cpu">
+                <div class="tm-tab-icon" style="background:var(--tm-cpu)"></div>
+                <div>
+                  <div class="tm-tab-name">CPU</div>
+                  <div class="tm-tab-val" id="tmt-cpu">--%</div>
+                </div>
+              </button>
+              <button class="tm-tab" data-tm="memory">
+                <div class="tm-tab-icon" style="background:var(--tm-mem)"></div>
+                <div>
+                  <div class="tm-tab-name">Memoria</div>
+                  <div class="tm-tab-val" id="tmt-mem">-- MB</div>
+                </div>
+              </button>
+              <button class="tm-tab" data-tm="disk">
+                <div class="tm-tab-icon" style="background:var(--tm-disk)"></div>
+                <div>
+                  <div class="tm-tab-name">Disco</div>
+                  <div class="tm-tab-val" id="tmt-disk">-- GB</div>
+                </div>
+              </button>
+              <button class="tm-tab" data-tm="nodejs">
+                <div class="tm-tab-icon" style="background:var(--tm-node)"></div>
+                <div>
+                  <div class="tm-tab-name">Node.js</div>
+                  <div class="tm-tab-val" id="tmt-node">-- MB</div>
+                </div>
+              </button>
+              <button class="tm-tab" data-tm="dispositivos">
+                <div class="tm-tab-icon" style="background:var(--tm-dev)"></div>
+                <div>
+                  <div class="tm-tab-name">Dispositivos</div>
+                  <div class="tm-tab-val" id="tmt-dev">--</div>
+                </div>
+              </button>
+              <button class="tm-tab" data-tm="arduino">
+                <div class="tm-tab-icon" style="background:var(--tm-ard)"></div>
+                <div>
+                  <div class="tm-tab-name">Arduino</div>
+                  <div class="tm-tab-val" id="tmt-ard">--</div>
+                </div>
+              </button>
+              <button class="tm-tab" data-tm="esp32">
+                <div class="tm-tab-icon" style="background:var(--tm-esp)"></div>
+                <div>
+                  <div class="tm-tab-name">ESP32</div>
+                  <div class="tm-tab-val" id="tmt-esp">--</div>
+                </div>
+              </button>
+              <button class="tm-tab" data-tm="sim900">
+                <div class="tm-tab-icon" style="background:var(--tm-sim)"></div>
+                <div>
+                  <div class="tm-tab-name">SIM900</div>
+                  <div class="tm-tab-val" id="tmt-sim">--</div>
+                </div>
+              </button>
+              <button class="tm-tab" data-tm="erros">
+                <div class="tm-tab-icon" style="background:var(--red)"></div>
+                <div>
+                  <div class="tm-tab-name">Erros</div>
+                  <div class="tm-tab-val" id="tmt-err">--</div>
+                </div>
+              </button>
+            </nav>
+          </div>
 
-      <!-- DASHBOARD -->
-      <section class="section active" id="sec-dashboard">
-        <div class="stats-row">
-          <div class="kpi">
-            <div class="kpi-value" id="stat-hoje">--</div>
-            <div class="kpi-label">Vendas Hoje</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-value" id="stat-total">--</div>
-            <div class="kpi-label">Total Pedidos</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-value" id="stat-pendentes">--</div>
-            <div class="kpi-label">Pendentes</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-value" id="stat-clientes">--</div>
-            <div class="kpi-label">Clientes</div>
-          </div>
-        </div>
+          <!-- Painel principal -->
+          <div class="tm-main">
 
-        <div class="card">
-          <div class="card-head">
-            <h2>Pedidos Recentes</h2>
-            <button id="refresh-btn" class="btn btn-ghost btn-sm">Actualizar</button>
-          </div>
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Numero</th><th>Pacote</th><th>Valor</th>
-                  <th>Metodo</th><th>Estado</th><th>Data</th>
-                </tr>
-              </thead>
-              <tbody id="pedidos-body">
-                <tr><td colspan="6" class="empty">A carregar...</td></tr>
-              </tbody>
-            </table>
+            <!-- CPU -->
+            <div class="tm-panel active" id="tmp-cpu">
+              <div class="tm-panel-head">
+                <div>
+                  <div class="tm-panel-title">CPU</div>
+                  <div class="tm-panel-sub">Utilizacao do processador</div>
+                </div>
+                <div class="tm-panel-big" id="tm-cpu-pct">--%</div>
+              </div>
+              <canvas id="tm-chart-cpu" class="tm-chart"></canvas>
+              <div class="tm-stats-row">
+                <div class="tm-stat"><div class="tm-stat-label">Nucleos</div><div class="tm-stat-val" id="tm-cpu-cores">--</div></div>
+                <div class="tm-stat"><div class="tm-stat-label">Uptime</div><div class="tm-stat-val" id="tm-cpu-up">--</div></div>
+              </div>
+            </div>
+
+            <!-- MEMORIA -->
+            <div class="tm-panel" id="tmp-memory">
+              <div class="tm-panel-head">
+                <div>
+                  <div class="tm-panel-title">Memoria (RAM)</div>
+                  <div class="tm-panel-sub">Utilizacao da memoria do servidor</div>
+                </div>
+                <div class="tm-panel-big" id="tm-mem-pct">--%</div>
+              </div>
+              <canvas id="tm-chart-mem" class="tm-chart"></canvas>
+              <div class="tm-stats-row">
+                <div class="tm-stat"><div class="tm-stat-label">Em uso</div><div class="tm-stat-val" id="tm-mem-used">--</div></div>
+                <div class="tm-stat"><div class="tm-stat-label">Disponivel</div><div class="tm-stat-val" id="tm-mem-free">--</div></div>
+                <div class="tm-stat"><div class="tm-stat-label">Total</div><div class="tm-stat-val" id="tm-mem-total">--</div></div>
+              </div>
+            </div>
+
+            <!-- DISCO -->
+            <div class="tm-panel" id="tmp-disk">
+              <div class="tm-panel-head">
+                <div>
+                  <div class="tm-panel-title">Disco</div>
+                  <div class="tm-panel-sub">Armazenamento do servidor</div>
+                </div>
+                <div class="tm-panel-big" id="tm-disk-pct">--%</div>
+              </div>
+              <div class="tm-disk-visual">
+                <div class="tm-disk-bar-wrap">
+                  <div id="tm-disk-bar-fill" class="tm-disk-fill"></div>
+                </div>
+              </div>
+              <div class="tm-stats-row">
+                <div class="tm-stat"><div class="tm-stat-label">Usado</div><div class="tm-stat-val" id="tm-disk-used">--</div></div>
+                <div class="tm-stat"><div class="tm-stat-label">Livre</div><div class="tm-stat-val" id="tm-disk-free">--</div></div>
+                <div class="tm-stat"><div class="tm-stat-label">Total</div><div class="tm-stat-val" id="tm-disk-total">--</div></div>
+              </div>
+            </div>
+
+            <!-- NODE.JS -->
+            <div class="tm-panel" id="tmp-nodejs">
+              <div class="tm-panel-head">
+                <div>
+                  <div class="tm-panel-title">Processo Node.js</div>
+                  <div class="tm-panel-sub">Memoria do processo do bot</div>
+                </div>
+                <div class="tm-panel-big" id="tm-node-heap">--</div>
+              </div>
+              <canvas id="tm-chart-node" class="tm-chart"></canvas>
+              <div class="tm-stats-row">
+                <div class="tm-stat"><div class="tm-stat-label">RSS</div><div class="tm-stat-val" id="tm-node-rss">--</div></div>
+                <div class="tm-stat"><div class="tm-stat-label">Heap usado</div><div class="tm-stat-val" id="tm-node-hused">--</div></div>
+                <div class="tm-stat"><div class="tm-stat-label">Heap total</div><div class="tm-stat-val" id="tm-node-htotal">--</div></div>
+                <div class="tm-stat"><div class="tm-stat-label">Uptime proc</div><div class="tm-stat-val" id="tm-node-up">--</div></div>
+              </div>
+            </div>
+
+            <!-- DISPOSITIVOS -->
+            <div class="tm-panel" id="tmp-dispositivos">
+              <div class="tm-panel-head">
+                <div><div class="tm-panel-title">Dispositivos</div><div class="tm-panel-sub">Estado de todos os sistemas</div></div>
+              </div>
+              <div id="tm-dev-list" class="tm-dev-grid"></div>
+            </div>
+
+            <!-- ARDUINO -->
+            <div class="tm-panel" id="tmp-arduino">
+              <div class="tm-panel-head">
+                <div><div class="tm-panel-title">Arduino Uno</div><div class="tm-panel-sub">Microcontrolador — 2KB SRAM, 32KB Flash</div></div>
+                <div class="tm-panel-big" id="tm-ard-sram">--</div>
+              </div>
+              <canvas id="tm-chart-ard" class="tm-chart"></canvas>
+              <div class="tm-stats-row" id="tm-ard-stats"></div>
+            </div>
+
+            <!-- ESP32 -->
+            <div class="tm-panel" id="tmp-esp32">
+              <div class="tm-panel-head">
+                <div><div class="tm-panel-title">ESP32 WROOM-32</div><div class="tm-panel-sub">Bridge WiFi ↔ MQTT</div></div>
+                <div class="tm-panel-big" id="tm-esp-heap">--</div>
+              </div>
+              <canvas id="tm-chart-esp" class="tm-chart"></canvas>
+              <div class="tm-stats-row" id="tm-esp-stats"></div>
+            </div>
+
+            <!-- SIM900 -->
+            <div class="tm-panel" id="tmp-sim900">
+              <div class="tm-panel-head">
+                <div><div class="tm-panel-title">SIM900 / GSM</div><div class="tm-panel-sub">Modem GSM — VodaCom MZ</div></div>
+                <div class="tm-panel-big" id="tm-sim-sinal" style="color:var(--tm-sim)">--/31</div>
+              </div>
+              <div id="tm-sim-items" class="tm-sim-grid"></div>
+            </div>
+
+            <!-- ERROS -->
+            <div class="tm-panel" id="tmp-erros">
+              <div class="tm-panel-head">
+                <div><div class="tm-panel-title">Erros e Avisos</div><div class="tm-panel-sub">Registos do sistema</div></div>
+              </div>
+              <div id="tm-erros-content"></div>
+            </div>
+
           </div>
         </div>
       </section>
 
-      <!-- WHATSAPP -->
+      <!-- restantes secoes preservadas -->
+      <section class="section active" id="sec-dashboard">
+        <div class="stats-row">
+          <div class="kpi"><div class="kpi-value" id="stat-hoje">--</div><div class="kpi-label">Vendas Hoje</div></div>
+          <div class="kpi"><div class="kpi-value" id="stat-total">--</div><div class="kpi-label">Total Pedidos</div></div>
+          <div class="kpi"><div class="kpi-value" id="stat-pendentes">--</div><div class="kpi-label">Pendentes</div></div>
+          <div class="kpi"><div class="kpi-value" id="stat-clientes">--</div><div class="kpi-label">Clientes</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Pedidos Recentes</h2><button id="refresh-btn" class="btn btn-ghost btn-sm">Actualizar</button></div>
+          <div class="table-scroll"><table><thead><tr><th>Numero</th><th>Pacote</th><th>Valor</th><th>Metodo</th><th>Estado</th><th>Data</th></tr></thead><tbody id="pedidos-body"><tr><td colspan="6" class="empty">A carregar...</td></tr></tbody></table></div>
+        </div>
+      </section>
+
       <section class="section" id="sec-whatsapp">
         <div class="card">
-          <div class="card-head">
-            <h2>Conexao WhatsApp</h2>
-          </div>
-
-          <div id="wa-status-bar" class="status-banner disconnected">
-            <span class="pulse"></span>
-            <span id="wa-status-text">A verificar...</span>
-          </div>
-
-          <div id="wa-qr" class="qr-wrap hidden">
-            <div class="qr-instructions">
-              Abra o WhatsApp &rarr; Aparelhos conectados &rarr; Conectar um aparelho &rarr; Aponte a camara para o codigo abaixo
-            </div>
-            <div class="qr-frame">
-              <img id="qr-image" src="" alt="QR Code">
-            </div>
-          </div>
-
-          <div id="wa-pairing" class="pairing-wrap hidden">
-            <div class="qr-instructions">
-              Abra o WhatsApp &rarr; Aparelhos conectados &rarr; Ligar com numero de telefone &rarr; Introduza o codigo abaixo
-            </div>
-            <div class="pairing-code" id="pairing-code">--------</div>
-          </div>
-
-          <div id="wa-connected" class="alert alert-green hidden">
-            WhatsApp esta conectado. O bot esta a processar mensagens.
-          </div>
-
+          <div class="card-head"><h2>Conexao WhatsApp</h2></div>
+          <div id="wa-status-bar" class="status-banner disconnected"><span class="pulse"></span><span id="wa-status-text">A verificar...</span></div>
+          <div id="wa-qr" class="qr-wrap hidden"><div class="qr-instructions">Abra o WhatsApp &rarr; Aparelhos conectados &rarr; Conectar um aparelho</div><div class="qr-frame"><img id="qr-image" src="" alt="QR Code"></div></div>
+          <div id="wa-pairing" class="pairing-wrap hidden"><div class="qr-instructions">Abra o WhatsApp &rarr; Aparelhos conectados &rarr; Ligar com numero de telefone</div><div class="pairing-code" id="pairing-code">--------</div></div>
+          <div id="wa-connected" class="alert alert-green hidden">WhatsApp esta conectado.</div>
           <div class="connect-panel">
             <div class="panel-label">Ligar com numero de telefone (recomendado)</div>
-            <div class="input-row">
-              <input id="phone-input" type="text" placeholder="Ex: 258841234567">
-              <button id="pair-btn" class="btn btn-primary">Obter Codigo</button>
-            </div>
+            <div class="input-row"><input id="phone-input" type="text" placeholder="Ex: 258841234567"><button id="pair-btn" class="btn btn-primary">Obter Codigo</button></div>
             <div class="panel-divider">ou</div>
             <button id="qr-btn" class="btn btn-outline">Gerar QR Code</button>
           </div>
         </div>
       </section>
 
-      <!-- TELEGRAM -->
       <section class="section" id="sec-telegram">
         <div class="tg-grid">
-          <div class="card">
-            <div class="card-head"><h2>Bot Administrador</h2></div>
-            <div class="tg-bot-info">
-              <div class="tg-username">@Gigabotmz_bot</div>
-              <div id="tg-admin-status" class="badge badge-red">Desligado</div>
-            </div>
-            <p class="muted-text">Controla o sistema remotamente. So tu tens acesso.</p>
-            <div class="cmd-list">
-              <div class="cmd-row"><code>/status</code><span>Estado de todos os sistemas</span></div>
-              <div class="cmd-row"><code>/qr</code><span>Receber QR Code ou codigo de pareamento</span></div>
-              <div class="cmd-row"><code>/restart</code><span>Reiniciar conexao WhatsApp</span></div>
-              <div class="cmd-row"><code>/pedidos</code><span>Resumo das vendas do dia</span></div>
-              <div class="cmd-row"><code>/chatid</code><span>Ver o teu Chat ID</span></div>
-              <div class="cmd-row"><code>/ajuda</code><span>Lista de todos os comandos</span></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head"><h2>Bot de Vendas</h2></div>
-            <div class="tg-bot-info">
-              <div class="tg-username">Criar em @BotFather</div>
-              <div id="tg-sales-status" class="badge badge-red">Desligado</div>
-            </div>
-            <p class="muted-text">Bot publico para os clientes comprarem pacotes MB directamente no Telegram.</p>
-            <div class="cmd-list">
-              <div class="cmd-row"><code>/start</code><span>Boas-vindas e termos de utilizacao</span></div>
-              <div class="cmd-row"><code>/menu</code><span>Menu principal de compra</span></div>
-              <div class="cmd-row"><code>/pedidos</code><span>Ver os seus pedidos anteriores</span></div>
-              <div class="cmd-row"><code>/cancelar</code><span>Cancelar pedido em curso</span></div>
-            </div>
-            <div class="alert alert-blue" style="margin-top:16px">
-              Adiciona TELEGRAM_SALES_TOKEN nas variaveis de ambiente do Portainer com o token de um segundo bot criado no BotFather.
-            </div>
-          </div>
+          <div class="card"><div class="card-head"><h2>Bot Administrador</h2></div><div class="tg-bot-info"><div class="tg-username">@Gigabotmz_bot</div><div id="tg-admin-status" class="badge badge-red">Desligado</div></div><p class="muted-text">Controla o sistema remotamente.</p>
+          <div class="cmd-list"><div class="cmd-row"><code>/status</code><span>Estado de todos os sistemas</span></div><div class="cmd-row"><code>/qr</code><span>Receber QR Code</span></div><div class="cmd-row"><code>/restart</code><span>Reiniciar WhatsApp</span></div><div class="cmd-row"><code>/pedidos</code><span>Resumo das vendas</span></div><div class="cmd-row"><code>/chatid</code><span>Ver o teu Chat ID</span></div></div></div>
+          <div class="card"><div class="card-head"><h2>Bot de Vendas</h2></div><div class="tg-bot-info"><div class="tg-username">Criar em @BotFather</div><div id="tg-sales-status" class="badge badge-red">Desligado</div></div><p class="muted-text">Bot publico para clientes comprarem pacotes MB.</p><div class="cmd-list"><div class="cmd-row"><code>/start</code><span>Boas-vindas</span></div><div class="cmd-row"><code>/menu</code><span>Menu de compra</span></div><div class="cmd-row"><code>/pedidos</code><span>Pedidos anteriores</span></div></div><div class="alert alert-blue" style="margin-top:16px">Adiciona TELEGRAM_SALES_TOKEN no Portainer.</div></div>
         </div>
       </section>
 
-      <!-- HARDWARE -->
       <section class="section" id="sec-hardware">
-        <div class="card">
-          <div class="card-head">
-            <h2>Estado dos Sistemas</h2>
-            <button id="hw-refresh" class="btn btn-ghost btn-sm">Actualizar</button>
-          </div>
-          <div class="hw-list">
-            <div class="hw-row">
-              <div class="hw-info">
-                <div class="hw-name">Broker MQTT (Mosquitto)</div>
-                <div class="hw-desc">Comunicacao entre o bot e o Arduino</div>
-              </div>
-              <div id="hw-mqtt" class="hw-badge">--</div>
-            </div>
-            <div class="hw-row">
-              <div class="hw-info">
-                <div class="hw-name">Arduino + SIM900</div>
-                <div class="hw-desc">Dispositivo fisico para SMS e USSD — Sinal: <span id="hw-arduino-signal">--</span>/31</div>
-              </div>
-              <div id="hw-arduino" class="hw-badge">--</div>
-            </div>
-            <div class="hw-row">
-              <div class="hw-info">
-                <div class="hw-name">WhatsApp (Baileys)</div>
-                <div class="hw-desc">Conexao ao WhatsApp Web</div>
-              </div>
-              <div id="hw-whatsapp" class="hw-badge">--</div>
-            </div>
-            <div class="hw-row">
-              <div class="hw-info">
-                <div class="hw-name">MongoDB</div>
-                <div class="hw-desc">Base de dados de clientes e pedidos</div>
-              </div>
-              <div class="hw-badge ok">Ligado</div>
-            </div>
-            <div class="hw-row">
-              <div class="hw-info">
-                <div class="hw-name">Telegram Bot Admin</div>
-                <div class="hw-desc">Bot de administracao remota</div>
-              </div>
-              <div id="hw-telegram" class="hw-badge">--</div>
-            </div>
-            <div class="hw-row">
-              <div class="hw-info">
-                <div class="hw-name">Telegram Bot Vendas</div>
-                <div class="hw-desc">Bot publico de vendas para clientes</div>
-              </div>
-              <div id="hw-telegram-sales" class="hw-badge">--</div>
-            </div>
-          </div>
-        </div>
+        <div class="card"><div class="card-head"><h2>Estado dos Sistemas</h2><button id="hw-refresh" class="btn btn-ghost btn-sm">Actualizar</button></div>
+        <div class="hw-list">
+          <div class="hw-row"><div class="hw-info"><div class="hw-name">Broker MQTT</div><div class="hw-desc">Comunicacao interna</div></div><div id="hw-mqtt" class="hw-badge">--</div></div>
+          <div class="hw-row"><div class="hw-info"><div class="hw-name">Arduino + SIM900</div><div class="hw-desc">Sinal: <span id="hw-arduino-signal">--</span>/31</div></div><div id="hw-arduino" class="hw-badge">--</div></div>
+          <div class="hw-row"><div class="hw-info"><div class="hw-name">WhatsApp</div><div class="hw-desc">Baileys</div></div><div id="hw-whatsapp" class="hw-badge">--</div></div>
+          <div class="hw-row"><div class="hw-info"><div class="hw-name">MongoDB</div><div class="hw-desc">Base de dados</div></div><div class="hw-badge ok">Ligado</div></div>
+          <div class="hw-row"><div class="hw-info"><div class="hw-name">Telegram Admin</div><div class="hw-desc">Bot administrador</div></div><div id="hw-telegram" class="hw-badge">--</div></div>
+          <div class="hw-row"><div class="hw-info"><div class="hw-name">Telegram Vendas</div><div class="hw-desc">Bot publico</div></div><div id="hw-telegram-sales" class="hw-badge">--</div></div>
+        </div></div>
       </section>
 
-      <!-- PEDIDOS -->
       <section class="section" id="sec-pedidos">
-        <div class="card">
-          <div class="card-head">
-            <h2>Todos os Pedidos</h2>
-            <button id="pedidos-refresh" class="btn btn-ghost btn-sm">Actualizar</button>
-          </div>
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Numero / Canal</th><th>Pacote</th><th>Valor</th>
-                  <th>Metodo</th><th>Estado</th><th>Data</th>
-                </tr>
-              </thead>
-              <tbody id="all-pedidos-body">
-                <tr><td colspan="6" class="empty">A carregar...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card"><div class="card-head"><h2>Todos os Pedidos</h2><button id="pedidos-refresh" class="btn btn-ghost btn-sm">Actualizar</button></div>
+        <div class="table-scroll"><table><thead><tr><th>Numero / Canal</th><th>Pacote</th><th>Valor</th><th>Metodo</th><th>Estado</th><th>Data</th></tr></thead><tbody id="all-pedidos-body"><tr><td colspan="6" class="empty">A carregar...</td></tr></tbody></table></div></div>
       </section>
 
-      <!-- SMS -->
       <section class="section" id="sec-sms">
-        <div class="card">
-          <div class="card-head">
-            <h2>SMS Recebidos</h2>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <select id="sms-filter" class="log-filter">
-                <option value="">Todos</option>
-                <option value="mpesa">M-Pesa</option>
-                <option value="emola">e-Mola</option>
-                <option value="outro">Outros</option>
-              </select>
-              <button id="sms-refresh" class="btn btn-ghost btn-sm">Actualizar</button>
-              <button id="sms-clear" class="btn btn-ghost btn-sm" style="color:var(--red)">Limpar BD</button>
-            </div>
-          </div>
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr><th>Data</th><th>Remetente</th><th>Mensagem</th><th>Tipo</th></tr>
-              </thead>
-              <tbody id="sms-body">
-                <tr><td colspan="4" class="empty">A carregar...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card"><div class="card-head"><h2>SMS Recebidos</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><select id="sms-filter" class="log-filter"><option value="">Todos</option><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option><option value="outro">Outros</option></select><button id="sms-refresh" class="btn btn-ghost btn-sm">Actualizar</button><button id="sms-clear" class="btn btn-ghost btn-sm" style="color:var(--red)">Limpar BD</button></div></div>
+        <div class="table-scroll"><table><thead><tr><th>Data</th><th>Remetente</th><th>Mensagem</th><th>Tipo</th></tr></thead><tbody id="sms-body"><tr><td colspan="4" class="empty">A carregar...</td></tr></tbody></table></div></div>
       </section>
 
-      <!-- USSD -->
       <section class="section" id="sec-ussd">
-        <div class="card">
-          <div class="card-head"><h2>Consola USSD</h2></div>
-          <p class="muted-text" style="margin-bottom:16px">Executa codigos USSD directamente pelo Arduino. O Arduino tem de estar ligado e o bridge a correr.</p>
-
-          <div class="ussd-form">
-            <input id="ussd-input" type="text" placeholder="Ex: *111# ou *123*1*2#" class="ussd-input">
-            <button id="ussd-run" class="btn btn-primary">Executar</button>
-          </div>
-
-          <div id="ussd-session-bar" class="ussd-session-bar hidden">
-            <span id="ussd-session-label">Sessao activa</span>
-            <button id="ussd-close-btn" class="btn btn-ghost btn-sm" style="color:var(--red)">Fechar Sessao</button>
-          </div>
-          <div id="ussd-result" class="ussd-result hidden"></div>
-          <div id="ussd-menu" class="ussd-menu hidden"></div>
-
-          <div style="margin-top:24px">
-            <div class="card-head" style="margin-bottom:12px"><h2>Codigos Uteis</h2></div>
-            <div class="cmd-grid">
-              <div class="cmd-item ussd-quick" data-code="*111#">
-                <div class="cmd-name">*111#</div>
-                <div class="cmd-desc">Verificar saldo Vodacom</div>
-              </div>
-              <div class="cmd-item ussd-quick" data-code="*123#">
-                <div class="cmd-name">*123#</div>
-                <div class="cmd-desc">Menu pacotes Vodacom</div>
-              </div>
-              <div class="cmd-item ussd-quick" data-code="*401#">
-                <div class="cmd-name">*401#</div>
-                <div class="cmd-desc">Saldo M-Pesa</div>
-              </div>
-              <div class="cmd-item ussd-quick" data-code="*100#">
-                <div class="cmd-name">*100#</div>
-                <div class="cmd-desc">Menu Movitel</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div class="card"><div class="card-head"><h2>Consola USSD</h2></div>
+        <div class="ussd-form"><input id="ussd-input" type="text" placeholder="Ex: *111# ou *123*1*2#" class="ussd-input"><button id="ussd-run" class="btn btn-primary">Executar</button></div>
+        <div id="ussd-session-bar" class="ussd-session-bar hidden"><span id="ussd-session-label">Sessao activa</span><button id="ussd-close-btn" class="btn btn-ghost btn-sm" style="color:var(--red)">Fechar Sessao</button></div>
+        <div id="ussd-result" class="ussd-result hidden"></div>
+        <div id="ussd-menu" class="ussd-menu hidden"></div>
+        <div style="margin-top:24px"><div class="card-head" style="margin-bottom:12px"><h2>Codigos Uteis</h2></div>
+        <div class="cmd-grid"><div class="cmd-item ussd-quick" data-code="*111#"><div class="cmd-name">*111#</div><div class="cmd-desc">Saldo Vodacom</div></div><div class="cmd-item ussd-quick" data-code="*123#"><div class="cmd-name">*123#</div><div class="cmd-desc">Menu pacotes</div></div><div class="cmd-item ussd-quick" data-code="*401#"><div class="cmd-name">*401#</div><div class="cmd-desc">Saldo M-Pesa</div></div><div class="cmd-item ussd-quick" data-code="*100#"><div class="cmd-name">*100#</div><div class="cmd-desc">Menu Movitel</div></div></div></div></div>
       </section>
 
-      <!-- ADMIN -->
-      <section class="section" id="sec-admin">
-        <div class="card">
-          <div class="card-head">
-            <h2>Sessoes SSH Activas</h2>
-            <button id="sessions-refresh" class="btn btn-ghost btn-sm">Actualizar</button>
-          </div>
-          <div id="sessions-count" class="muted-text" style="margin-bottom:12px">A carregar...</div>
-          <div class="table-scroll">
-            <table>
-              <thead><tr><th>#</th><th>IP de Origem</th><th>Porto</th></tr></thead>
-              <tbody id="sessions-body">
-                <tr><td colspan="3" class="empty">Sem sessoes activas</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="alert alert-blue" style="margin-top:14px">
-            Mostra ligacoes TCP estabelecidas na porta 22 do servidor.
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:16px">
-          <div class="card-head"><h2>Enviar SMS via Arduino (AT+CMGS)</h2></div>
-          <p class="muted-text" style="margin-bottom:14px">Envia um SMS directamente pelo SIM900. O Arduino tem de estar ligado e o bridge a correr.</p>
-          <div id="at-sms-status" class="hidden" style="margin-bottom:12px"></div>
-          <div style="display:flex;flex-direction:column;gap:12px">
-            <div>
-              <label class="field-label">Numero de destino (com codigo do pais)</label>
-              <input id="at-sms-numero" type="text" placeholder="+258841234567" class="ussd-input" style="width:100%">
-            </div>
-            <div>
-              <label class="field-label">Mensagem</label>
-              <textarea id="at-sms-msg" rows="3" placeholder="Texto do SMS..." class="ussd-input" style="width:100%;resize:vertical"></textarea>
-            </div>
-            <button id="at-sms-send" class="btn btn-primary">Enviar SMS</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- AT CONSOLE -->
       <section class="section" id="sec-at">
         <div class="card">
-          <div class="card-head">
-            <h2>Console AT — SIM900</h2>
-            <div style="display:flex;gap:6px;align-items:center">
-              <label class="muted-text" style="font-size:.72rem;margin:0">Fonte:</label>
-              <select id="at-fontsize" class="log-filter">
-                <option value="12">12px</option>
-                <option value="14" selected>14px</option>
-                <option value="16">16px</option>
-                <option value="18">18px</option>
-              </select>
-              <button id="at-clear" class="btn btn-ghost btn-sm" style="color:var(--muted)">Limpar</button>
-            </div>
-          </div>
-          <p class="muted-text" style="margin-bottom:14px">Envia comandos AT directamente ao SIM900 via Arduino. O bridge tem de estar a correr.</p>
-
+          <div class="card-head"><h2>Console AT — SIM900</h2><div style="display:flex;gap:6px;align-items:center"><label class="muted-text" style="font-size:.72rem;margin:0">Fonte:</label><select id="at-fontsize" class="log-filter"><option value="12">12px</option><option value="14" selected>14px</option><option value="16">16px</option></select><button id="at-clear" class="btn btn-ghost btn-sm" style="color:var(--muted)">Limpar</button></div></div>
           <div id="at-terminal" class="at-terminal"></div>
-
-          <div class="at-input-row">
-            <span class="at-prompt">AT&gt;</span>
-            <input id="at-input" type="text" placeholder="Ex: AT+CSQ  ou  AT+CMGR=1" autocomplete="off" spellcheck="false">
-            <button id="at-send" class="btn btn-primary btn-sm">Enviar</button>
-          </div>
-
-          <div style="margin-top:16px">
-            <div class="muted-text" style="margin-bottom:8px">Comandos rapidos:</div>
-            <div class="at-groups">
-              <div class="at-group-label">Sistema</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT">Ping</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CSQ">Sinal</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CREG?">Rede</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+COPS?">Operadora</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="ATI">Info modem</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CIMI">IMSI SIM</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CNUM">Numero SIM</button>
-              </div>
-              <div class="at-group-label">SMS</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGF=1">Modo texto</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGL=&quot;ALL&quot;">Listar todos</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGL=&quot;REC UNREAD&quot;">Nao lidos</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGD=1,4">Apagar todos</button>
-              </div>
-              <div class="at-group-label">USSD via AT</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px">
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;*111#&quot;,15">*111# menu</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;*123#&quot;,15">*123# pacotes</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;*401#&quot;,15">*401# M-Pesa</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;1&quot;,15">Opcao 1</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;2&quot;,15">Opcao 2</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;3&quot;,15">Opcao 3</button>
-                <button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=2">Fechar sessao</button>
-              </div>
-            </div>
-          </div>
+          <div class="at-input-row"><span class="at-prompt">AT&gt;</span><input id="at-input" type="text" placeholder="Ex: AT+CSQ" autocomplete="off" spellcheck="false"><button id="at-send" class="btn btn-primary btn-sm">Enviar</button></div>
+          <div style="margin-top:16px"><div class="muted-text" style="margin-bottom:8px">Comandos rapidos:</div>
+          <div class="at-groups">
+            <div class="at-group-label">Sistema</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT">Ping</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CSQ">Sinal</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CREG?">Rede</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+COPS?">Operadora</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="ATI">Info modem</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CNUM">Numero SIM</button></div>
+            <div class="at-group-label">SMS</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGF=1">Modo texto</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGL=&quot;ALL&quot;">Listar todos</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CMGD=1,4">Apagar todos</button></div>
+            <div class="at-group-label">USSD via AT</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px"><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;*111#&quot;,15">*111#</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;*123#&quot;,15">*123#</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;1&quot;,15">Opcao 1</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=1,&quot;2&quot;,15">Opcao 2</button><button class="btn btn-ghost btn-sm at-quick" data-cmd="AT+CUSD=2">Fechar sessao</button></div>
+          </div></div>
         </div>
       </section>
 
-      <!-- ENVIAR MENSAGEM -->
       <section class="section" id="sec-send">
-        <div class="card" style="max-width:600px">
-          <div class="card-head"><h2>Enviar Mensagem WhatsApp</h2></div>
-
-          <div id="send-wa-status" class="hidden" style="margin-bottom:14px"></div>
-
-          <div style="display:flex;flex-direction:column;gap:14px">
-            <div>
-              <label class="field-label">Numero (com codigo do pais)</label>
-              <input id="send-numero" type="text" placeholder="Ex: 258841234567" class="ussd-input" style="width:100%">
-            </div>
-            <div>
-              <label class="field-label">Mensagem</label>
-              <textarea id="send-msg" rows="4" placeholder="Escreve a mensagem..." class="ussd-input" style="width:100%;resize:vertical"></textarea>
-            </div>
-            <button id="send-wa-btn" class="btn btn-primary">Enviar Mensagem</button>
-          </div>
-        </div>
+        <div class="card" style="max-width:600px"><div class="card-head"><h2>Enviar Mensagem WhatsApp</h2></div>
+        <div id="send-wa-status" class="hidden" style="margin-bottom:14px"></div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div><label class="field-label">Numero</label><input id="send-numero" type="text" placeholder="Ex: 258841234567" class="ussd-input" style="width:100%"></div>
+          <div><label class="field-label">Mensagem</label><textarea id="send-msg" rows="4" class="ussd-input" style="width:100%;resize:vertical"></textarea></div>
+          <button id="send-wa-btn" class="btn btn-primary">Enviar Mensagem</button>
+        </div></div>
       </section>
 
-      <!-- TASK MANAGER -->
-      <section class="section" id="sec-taskmanager">
-
-        <div class="tm-grid">
-
-          <!-- SERVIDOR -->
-          <div class="card tm-card">
-            <div class="card-head"><h2>Servidor</h2><button id="tm-refresh" class="btn btn-ghost btn-sm">Actualizar</button></div>
-            <div class="tm-stat-row">
-              <span class="tm-label">CPU</span>
-              <div class="tm-bar-wrap"><div id="tm-cpu-bar" class="tm-bar"></div></div>
-              <span id="tm-cpu-val" class="tm-val">--%</span>
-            </div>
-            <div class="tm-stat-row">
-              <span class="tm-label">RAM</span>
-              <div class="tm-bar-wrap"><div id="tm-ram-bar" class="tm-bar"></div></div>
-              <span id="tm-ram-val" class="tm-val">-- MB</span>
-            </div>
-            <div class="tm-stat-row">
-              <span class="tm-label">Disco</span>
-              <div class="tm-bar-wrap"><div id="tm-disk-bar" class="tm-bar"></div></div>
-              <span id="tm-disk-val" class="tm-val">-- GB</span>
-            </div>
-            <div class="tm-details" id="tm-server-details"></div>
-          </div>
-
-          <!-- PROCESSO NODE.JS -->
-          <div class="card tm-card">
-            <div class="card-head"><h2>Processo Node.js</h2></div>
-            <div class="tm-stat-row">
-              <span class="tm-label">Heap</span>
-              <div class="tm-bar-wrap"><div id="tm-heap-bar" class="tm-bar"></div></div>
-              <span id="tm-heap-val" class="tm-val">-- MB</span>
-            </div>
-            <div class="tm-details" id="tm-node-details"></div>
-          </div>
-
-          <!-- ERROS E ALERTAS -->
-          <div class="card tm-card">
-            <div class="card-head"><h2>Erros e Alertas</h2></div>
-            <div class="tm-erros" id="tm-erros"></div>
-          </div>
-
-          <!-- DISPOSITIVOS -->
-          <div class="card tm-card">
-            <div class="card-head"><h2>Dispositivos</h2></div>
-            <div id="tm-devices-list" class="tm-devices"></div>
-          </div>
-
-          <!-- SIM900 -->
-          <div class="card tm-card">
-            <div class="card-head">
-              <h2>SIM900 / GSM</h2>
-              <button id="tm-diagnose-btn" class="btn btn-ghost btn-sm">Diagnostico</button>
-            </div>
-            <div id="tm-sim900-content">
-              <div class="muted-text">A aguardar diagnostico... (corre automaticamente a cada 10 min)</div>
-            </div>
-          </div>
-
-          <!-- ESP32 -->
-          <div class="card tm-card">
-            <div class="card-head"><h2>ESP32 WROOM-32</h2></div>
-            <div class="tm-stat-row">
-              <span class="tm-label">Heap</span>
-              <div class="tm-bar-wrap"><div id="tm-esp-bar" class="tm-bar"></div></div>
-              <span id="tm-esp-val" class="tm-val">-- KB</span>
-            </div>
-            <div class="tm-details" id="tm-esp-details">
-              <div class="muted-text">A aguardar dados do ESP32...</div>
-            </div>
-          </div>
-
-          <!-- ARDUINO UNO -->
-          <div class="card tm-card">
-            <div class="card-head"><h2>Arduino Uno</h2></div>
-            <div class="tm-stat-row">
-              <span class="tm-label">SRAM</span>
-              <div class="tm-bar-wrap"><div id="tm-ard-bar" class="tm-bar"></div></div>
-              <span id="tm-ard-val" class="tm-val">-- B</span>
-            </div>
-            <div class="tm-details" id="tm-arduino-details"></div>
-          </div>
-
-        </div>
+      <section class="section" id="sec-admin">
+        <div class="card"><div class="card-head"><h2>Sessoes SSH Activas</h2><button id="sessions-refresh" class="btn btn-ghost btn-sm">Actualizar</button></div>
+        <div id="sessions-count" class="muted-text" style="margin-bottom:12px">A carregar...</div>
+        <div class="table-scroll"><table><thead><tr><th>#</th><th>IP de Origem</th><th>Porto</th></tr></thead><tbody id="sessions-body"><tr><td colspan="3" class="empty">Sem sessoes activas</td></tr></tbody></table></div></div>
+        <div class="card" style="margin-top:16px"><div class="card-head"><h2>Enviar SMS via Arduino (AT+CMGS)</h2></div>
+        <div id="at-sms-status" class="hidden" style="margin-bottom:12px"></div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div><label class="field-label">Numero</label><input id="at-sms-numero" type="text" placeholder="+258841234567" class="ussd-input" style="width:100%"></div>
+          <div><label class="field-label">Mensagem</label><textarea id="at-sms-msg" rows="3" class="ussd-input" style="width:100%;resize:vertical"></textarea></div>
+          <button id="at-sms-send" class="btn btn-primary">Enviar SMS</button>
+        </div></div>
       </section>
 
-      <!-- LOGS -->
       <section class="section" id="sec-logs">
-        <div class="card">
-          <div class="card-head">
-            <h2>Registos do Sistema</h2>
-            <div style="display:flex;gap:8px">
-              <select id="log-filter" class="log-filter">
-                <option value="">Todos</option>
-                <option value="ERROR">Erros</option>
-                <option value="WARN">Avisos</option>
-                <option value="SUCCESS">Sucesso</option>
-                <option value="INFO">Info</option>
-              </select>
-              <button id="logs-refresh" class="btn btn-ghost btn-sm">Actualizar</button>
-              <button id="logs-clear-view" class="btn btn-ghost btn-sm">Limpar vista</button>
-            </div>
-          </div>
-          <div id="logs-container" class="logs-container">
-            <div class="empty">A carregar registos...</div>
-          </div>
-        </div>
+        <div class="card"><div class="card-head"><h2>Registos do Sistema</h2><div style="display:flex;gap:8px"><select id="log-filter" class="log-filter"><option value="">Todos</option><option value="ERROR">Erros</option><option value="WARN">Avisos</option><option value="SUCCESS">Sucesso</option><option value="INFO">Info</option></select><button id="logs-refresh" class="btn btn-ghost btn-sm">Actualizar</button><button id="logs-clear-view" class="btn btn-ghost btn-sm">Limpar vista</button></div></div>
+        <div id="logs-container" class="logs-container"><div class="empty">A carregar registos...</div></div></div>
       </section>
 
-      <!-- SETTINGS -->
       <section class="section" id="sec-settings">
         <div class="settings-grid">
-
-          <div class="card">
-            <div class="card-head"><h2>Configuracao Actual</h2></div>
-            <div class="cfg-list" id="cfg-list">
-              <div class="empty">A carregar...</div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head"><h2>Variaveis de Ambiente</h2></div>
-            <p class="muted-text" style="margin-bottom:14px">
-              Para alterar qualquer valor, actualiza as variaveis de ambiente no Portainer e faz redeploy da stack.
-            </p>
-            <div class="env-table">
-              <div class="env-row env-header">
-                <span>Variavel</span><span>Descricao</span><span>Obrigatoria</span>
-              </div>
-              <div class="env-row"><code>NUMERO_MPESA</code><span>Numero M-Pesa para pagamentos</span><span class="req yes">Sim</span></div>
-              <div class="env-row"><code>NUMERO_EMOLA</code><span>Numero e-Mola para pagamentos</span><span class="req yes">Sim</span></div>
-              <div class="env-row"><code>TELEGRAM_SALES_TOKEN</code><span>Token do bot de vendas (BotFather)</span><span class="req yes">Sim</span></div>
-              <div class="env-row"><code>TELEGRAM_TOKEN</code><span>Token do bot admin (BotFather)</span><span class="req no">Opcional</span></div>
-              <div class="env-row"><code>TELEGRAM_CHAT_ID</code><span>O teu ID Telegram pessoal (@userinfobot)</span><span class="req no">Opcional</span></div>
-              <div class="env-row"><code>MQTT_USERNAME</code><span>Utilizador MQTT</span><span class="req no">Opcional</span></div>
-              <div class="env-row"><code>MQTT_PASSWORD</code><span>Password MQTT</span><span class="req no">Opcional</span></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head"><h2>Sobre o Sistema</h2></div>
-            <div class="about-list">
-              <div class="about-row"><span>WhatsApp</span><span>Baileys 6.7.x</span></div>
-              <div class="about-row"><span>Base de Dados</span><span>MongoDB 7</span></div>
-              <div class="about-row"><span>Broker MQTT</span><span>Mosquitto 1.6</span></div>
-              <div class="about-row"><span>Servidor</span><span>Node.js 18 + Express</span></div>
-              <div class="about-row"><span>Hardware</span><span>Arduino + SIM900</span></div>
-              <div class="about-row"><span>Operadoras</span><span>Vodacom (M-Pesa) / Movitel (e-Mola)</span></div>
-            </div>
-          </div>
-
+          <div class="card"><div class="card-head"><h2>Configuracao Actual</h2></div><div class="cfg-list" id="cfg-list"><div class="empty">A carregar...</div></div></div>
+          <div class="card"><div class="card-head"><h2>Variaveis de Ambiente</h2></div>
+          <div class="env-table">
+            <div class="env-row env-header"><span>Variavel</span><span>Descricao</span><span>Obrigatoria</span></div>
+            <div class="env-row"><code>NUMERO_MPESA</code><span>Numero M-Pesa</span><span class="req yes">Sim</span></div>
+            <div class="env-row"><code>NUMERO_EMOLA</code><span>Numero e-Mola</span><span class="req yes">Sim</span></div>
+            <div class="env-row"><code>TELEGRAM_SALES_TOKEN</code><span>Token bot vendas</span><span class="req yes">Sim</span></div>
+            <div class="env-row"><code>TELEGRAM_TOKEN</code><span>Token bot admin</span><span class="req no">Opcional</span></div>
+            <div class="env-row"><code>TELEGRAM_CHAT_ID</code><span>ID Telegram pessoal</span><span class="req no">Opcional</span></div>
+          </div></div>
         </div>
       </section>
 
     </div>
   </div>
 
-  <!-- TASK MANAGER WIDGET -->
+  <!-- TASK MANAGER WIDGET FLUTUANTE -->
   <div id="taskman" class="taskman hidden">
-    <div class="taskman-head">
-      <span>Dispositivos</span>
-      <button id="taskman-close" class="btn-icon" style="font-size:.9rem">&#x2715;</button>
-    </div>
+    <div class="taskman-head"><span>Dispositivos</span><button id="taskman-close" class="btn-icon" style="font-size:.9rem">&#x2715;</button></div>
     <div id="taskman-list" class="taskman-list"></div>
   </div>
   <button id="taskman-toggle" class="taskman-toggle" title="Task Manager">
@@ -680,19 +439,9 @@
 
   <!-- NOTIFICATION PANEL -->
   <div id="notif-panel" class="notif-panel hidden">
-    <div class="notif-panel-head">
-      <span>Notificacoes</span>
-      <div style="display:flex;gap:8px">
-        <button id="notif-clear" class="btn btn-ghost btn-sm">Limpar</button>
-        <button id="notif-close" class="btn-icon">&#x2715;</button>
-      </div>
-    </div>
-    <div id="notif-list" class="notif-list">
-      <div class="empty" style="padding:24px">Sem notificacoes</div>
-    </div>
+    <div class="notif-panel-head"><span>Notificacoes</span><div style="display:flex;gap:8px"><button id="notif-clear" class="btn btn-ghost btn-sm">Limpar</button><button id="notif-close" class="btn-icon">&#x2715;</button></div></div>
+    <div id="notif-list" class="notif-list"><div class="empty" style="padding:24px">Sem notificacoes</div></div>
   </div>
-
-  <!-- NOTIFICATION BELL -->
   <button id="notif-bell" class="notif-bell" title="Notificacoes">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     <span id="notif-badge" class="notif-badge hidden">0</span>
