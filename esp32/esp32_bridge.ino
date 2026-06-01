@@ -346,6 +346,8 @@ void setup() {
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
   mqttClient.setCallback(mqttCallback);
   mqttClient.setBufferSize(1024);
+  mqttClient.setKeepAlive(120);
+  mqttClient.setSocketTimeout(30);
   conectarMQTT();
 
   Serial.println("[ESP32-S3] Pronto!");
@@ -363,8 +365,8 @@ void loop() {
     else if (c != '\r') serialBuf += c;
   }
 
-  // Status periodico
-  if (millis() - ultimoStatus > 60000) {
+  // Status a cada 30s para evitar timeout no dashboard
+  if (millis() - ultimoStatus > 30000) {
     enviarSerial("STATUS");
     ultimoStatus = millis();
   }
